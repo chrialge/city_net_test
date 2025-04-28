@@ -1,0 +1,87 @@
+body {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: "Roboto", sans-serif;
+}
+
+.page_register {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+
+
+    &>.container_credentials {
+        max-width: 500px;
+        width: 85%;
+        background-color: #f0f0f0;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+
+        &>h1 {
+            text-align: center;
+            margin: 0 0 20px;
+        }
+
+        &>form {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+
+            &>.container_input {
+                display: flex;
+                flex-direction: column;
+                width: 100%;
+                gap: 5px;
+
+                &>label {
+                    font-weight: 500;
+                }
+
+                &>input {
+                    outline: none;
+                    padding: 7px;
+                    border-radius: 3px;
+                    border: 1px solid black;
+                    background-color: #fff;
+
+                    transition: all 0.3s ease-in-out;
+
+                    &:focus {
+                        border: 1px solid #007bff;
+                        box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3);
+                    }
+                }
+
+                &>.error_js {
+                    color: red;
+                    font-size: 14px;
+                    display: none;
+                }
+            }
+
+            &>.button_form {
+
+                &>button {
+                    cursor: pointer;
+                    padding: 0.5rem 1rem;
+                    font-weight: 500;
+                    border-radius: 5px;
+                    border: none;
+                    background-color: #007bff;
+                    color: #fff;
+                    font-size: 17px;
+                    transition: all 0.3s ease-in-out;
+
+                    &:hover {
+                        background-color: #0056b3;
+                    }
+                }
+
+            }
+        }
+    }
+}
