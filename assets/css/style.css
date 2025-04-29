@@ -56,6 +56,12 @@ body {
                     }
                 }
 
+                &>.error_js {
+                    color: red;
+                    font-size: 14px;
+                    display: none;
+                }
+
                 &>.field_password {
                     width: 100%;
                     position: relative;
@@ -93,6 +99,47 @@ body {
                     }
                 }
 
+
+
+            }
+
+            &>.container_input_address {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 10px;
+
+                &>.field_address {
+                    width: calc(50% - 5px);
+                    display: flex;
+                    flex-direction: column;
+                    gap: 5px;
+
+                    &>label {
+                        font-weight: 500;
+                    }
+
+                    &>input {
+                        outline: none;
+                        padding: 7px;
+                        border-radius: 3px;
+                        border: 1px solid black;
+                        background-color: #fff;
+
+                        transition: all 0.3s ease-in-out;
+
+                        &:focus {
+                            border: 1px solid #007bff;
+                            box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3);
+                        }
+                    }
+
+                    &>.error_js {
+                        color: red;
+                        font-size: 14px;
+                        display: none;
+                    }
+                }
+
                 &>.error_js {
                     color: red;
                     font-size: 14px;
@@ -102,7 +149,7 @@ body {
 
             &>.button_form {
 
-                &>button {
+                &>.btn_submit {
                     cursor: pointer;
                     padding: 0.5rem 1rem;
                     font-weight: 500;
@@ -116,6 +163,18 @@ body {
                     &:hover {
                         background-color: #0056b3;
                     }
+                }
+
+                &>.btn_load {
+                    padding: 0.5rem 1rem;
+                    font-weight: 500;
+                    border-radius: 5px;
+                    border: none;
+                    background-color: #007bff7e;
+                    color: #fff;
+                    font-size: 17px;
+                    display: none;
+                    ;
                 }
 
             }

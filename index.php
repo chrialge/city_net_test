@@ -22,7 +22,7 @@
         <div class="container_credentials">
             <h1>Registrazione azienda</h1>
 
-            <form action="register.php" method="POST">
+            <form action="register.php" method="POST" onsubmit="check_form(event)">
 
                 <div class="container_input">
                     <label for="name_company">Nome azienda:</label>
@@ -58,26 +58,78 @@
 
                 <div class="container_input">
                     <label for="vat_number">Partita Iva</label>
-                    <input type="text" id="vat_number" name="vat_number" required>
+                    <input type="text" id="vat_number" name="vat_number" onblur="check_vat()" onkeyup="hide_error_vat()" required>
+
+                    <span class="error_js" id="error_vat">La partita iva deve essere di 11 carratteri numerici</span>
                 </div>
 
                 <div class="container_input">
                     <label for="telephone">Telefono:</label>
-                    <input type="text" id="telephone" name="telephone" required>
+                    <input type="text" id="telephone" name="telephone" onblur="check_telephone()" onkeyup="hide_error_telephone()">
+
+                    <span class="error_js" id="error_telephone">
+                        Il numero di telefono deve essere di 9/10 carratteri numerici
+                    </span>
                 </div>
 
+                <div class="container_input_address">
+
+                    <div class="field_address">
+                        <label for="province">Provincia:</label>
+                        <input type="text" id="province" name="province" onblur="check_address(event, 'province')" onkeyup="hide_error_address('province')" required>
+
+                        <span class="error_js" id="error_province">
+                            La provincia deve essere di 3 carratteri
+                        </span>
+                    </div>
+
+                    <div class="field_address">
+                        <label for="city">Comune:</label>
+                        <input type="text" id="city" name="city" onblur="check_address(event, 'city')" onkeyup="hide_error_address('city')" required>
+
+                        <span class="error_js" id="error_city">
+                            Il comune deve essere di almeno 3 carratteri
+                        </span>
+                    </div>
+
+                    <div class="field_address">
+                        <label for="address">Indirizzo:</label>
+                        <input type="text" id="address" name="address" onblur="check_address(event, 'address')" onkeyup="hide_error_address('address')" required>
+
+                        <span class="error_js" id="error_address">
+                            l'indirizzo deve essere di almeno 3 carratteri
+                        </span>
+                    </div>
+
+                    <div class="field_address">
+                        <label for="cap">CAP:</label>
+                        <input type="text" id="cap" name="cap" onblur="check_cap()" onkeyup="hide_error_cap()" required>
+
+                        <span class="error_js" id="error_cap">Il CAP deve essere di 5 carratteri numerici</span>
+                    </div>
+
+                    <span class="error_js" id="error_address_all">
+                        Per favore, compilare tutti i campi di indirizzo completo.
+                    </span>
+
+                </div>
+
+
                 <div class="container_input">
-                    <label for="address">Indirizzo:</label>
-                    <input type="text" id="address" name="address" required>
+                    <label for="birth_of_day">Data di fondazione:</label>
+                    <input type="date" id="birth_of_day" name="birth_of_day">
                 </div>
 
                 <div class="container_input">
                     <label for="email">Email:</label>
-                    <input type="email" id="email" name="email" required><br><br>
+                    <input type="email" id="email" name="email" onblur="check_email()" onkeyup="hide_error_email()">
+
+                    <span class="error_js" id="error_email">Email non valida</span>
                 </div>
 
                 <div class="button_form">
-                    <button type="submit">Registrarti</button>
+                    <button class="btn_submit" type="submit">Registrarti</button>
+                    <button class="btn_load" disabled>Attendi...</button>
                 </div>
 
             </form>
