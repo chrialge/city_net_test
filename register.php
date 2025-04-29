@@ -1,10 +1,9 @@
 <?php
 
-require_once __DIR__ . '/env.php';
 require_once __DIR__ . '/assets/helper/function.php';
 require_once __DIR__ . '/assets/helper/db.php';
 require_once __DIR__ . '/assets/models/Company.php';
-
+require_once __DIR__ . '/assets/helper/Auth.php';
 
 // var_dump($_POST);
 
@@ -78,8 +77,22 @@ if (isset($_POST['name_company']) && isset($_POST['password']) && isset($_POST['
     $connection = DB::connect();
     // Save the company data to the database
     if ($company->save($connection)) {
+
+
+        // Start the session if not already started
+        Auth::check($connection, $name_company, $password);
         echo "Registrazione avvenuta con successo";
+
+        // Close the database connection
+        DB::disconnect($connection);
+
+        // Redirect to the dashboard page after successful registration
+        header('location: view/dashboard.php');
+        exit;
     } else {
+
+        // Close the database connection
+        DB::disconnect($connection);
         echo "Errore durante la registrazione";
     }
 } else {

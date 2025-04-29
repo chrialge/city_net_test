@@ -1,3 +1,27 @@
+<?php
+
+require_once __DIR__ . '/assets/helper/db.php';
+
+$mysqli = DB::connect();
+
+$mysqli->query("CREATE TABLE IF NOT EXISTS `companies` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `name_company` VARCHAR(100) NOT NULL,
+    `password` VARCHAR(100) NOT NULL,
+    `vat_number` VARCHAR(11) NOT NULL,
+    `telephone` VARCHAR(13) DEFAULT NULL,
+    `email` VARCHAR(100) DEFAULT NULL,
+    `birth_of_day` DATE DEFAULT NULL,
+    `address` TEXT(1000) NOT NULL,
+    `create_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    `update_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (`id`)
+);");
+
+DB::disconnect($mysqli);
+?>
+
+
 <!DOCTYPE html>
 <html lang="en">
 
@@ -22,10 +46,14 @@
         <div class="container_credentials">
             <h1>Registrazione azienda</h1>
 
+            <a href="./view/login.php">
+                hai gia un account? Accedi
+            </a>
+
             <form action="register.php" method="POST" onsubmit="check_form(event)">
 
                 <div class="container_input">
-                    <label for="name_company">Nome azienda:</label>
+                    <label for="name_company">Nome azienda:*</label>
 
                     <input type="text" id="name_company" name="name_company" onblur="check_name()" onkeyup="hide_error_name()" required>
 
@@ -36,7 +64,7 @@
                 </div>
 
                 <div class="container_input">
-                    <label for="password">Password:</label>
+                    <label for="password">Password:*</label>
                     <div class="field_password">
                         <input type="password" id="password" name="password" required>
                         <i class="fa-solid fa-eye" onclick="showPassword(event)"></i>
@@ -45,7 +73,7 @@
                 </div>
 
                 <div class="container_input">
-                    <label for="confirm_password">Conferma password:</label>
+                    <label for="confirm_password">Conferma password:*</label>
 
                     <div class="field_password">
                         <input type="password" id="confirm_password" name="confirm_password" onblur="check_password()" onkeyup="hide_error_password()" required>
@@ -57,7 +85,7 @@
                 </div>
 
                 <div class="container_input">
-                    <label for="vat_number">Partita Iva</label>
+                    <label for="vat_number">Partita Iva:*</label>
                     <input type="text" id="vat_number" name="vat_number" onblur="check_vat()" onkeyup="hide_error_vat()" required>
 
                     <span class="error_js" id="error_vat">La partita iva deve essere di 11 carratteri numerici</span>
@@ -75,7 +103,7 @@
                 <div class="container_input_address">
 
                     <div class="field_address">
-                        <label for="province">Provincia:</label>
+                        <label for="province">Provincia:*</label>
                         <input type="text" id="province" name="province" onblur="check_address(event, 'province')" onkeyup="hide_error_address('province')" required>
 
                         <span class="error_js" id="error_province">
@@ -84,7 +112,7 @@
                     </div>
 
                     <div class="field_address">
-                        <label for="city">Comune:</label>
+                        <label for="city">Comune:*</label>
                         <input type="text" id="city" name="city" onblur="check_address(event, 'city')" onkeyup="hide_error_address('city')" required>
 
                         <span class="error_js" id="error_city">
@@ -93,7 +121,7 @@
                     </div>
 
                     <div class="field_address">
-                        <label for="address">Indirizzo:</label>
+                        <label for="address">Indirizzo:*</label>
                         <input type="text" id="address" name="address" onblur="check_address(event, 'address')" onkeyup="hide_error_address('address')" required>
 
                         <span class="error_js" id="error_address">
@@ -102,7 +130,7 @@
                     </div>
 
                     <div class="field_address">
-                        <label for="cap">CAP:</label>
+                        <label for="cap">CAP:*</label>
                         <input type="text" id="cap" name="cap" onblur="check_cap()" onkeyup="hide_error_cap()" required>
 
                         <span class="error_js" id="error_cap">Il CAP deve essere di 5 carratteri numerici</span>

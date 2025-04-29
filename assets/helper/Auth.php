@@ -15,8 +15,7 @@ class Auth
         // password viene trasformata con la crittografia sha con il metodo
         $hashedPassword = md5($password);
 
-        $result = $connection->query("SELECT `id`, `name_company`, 'password' FROM `companies` WHERE `username` = '$username' AND `password` = '$hashedPassword'");
-        var_dump($result);
+        $result = $connection->query("SELECT `id`, `name_company`, 'password' FROM `companies` WHERE `name_company` = '$username' AND `password` = '$hashedPassword'");
 
         // dd($result, $username, $password);
         if ($result->num_rows > 0) {
@@ -25,10 +24,13 @@ class Auth
             $userData = $result->fetch_assoc();
 
             $_SESSION['userId'] = $userData['id'];
-            $_SESSION['userName'] = $userData['username'];
+            $_SESSION['userName'] = $userData['name_company'];
+            return true;
         } else {
             $_SESSION['userId'] = 0;
             $_SESSION['userName'] = '';
+
+            return false;
         }
         // var_dump($result);
     }

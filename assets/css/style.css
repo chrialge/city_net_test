@@ -5,7 +5,8 @@ body {
     font-family: "Roboto", sans-serif;
 }
 
-.page_register {
+.page_register,
+.page_login {
     display: flex;
     justify-content: center;
     align-items: center;
@@ -23,6 +24,11 @@ body {
         &>h1 {
             text-align: center;
             margin: 0 0 20px;
+        }
+
+        &>a {
+            display: block;
+            margin-bottom: 20px
         }
 
         &>form {
@@ -180,4 +186,118 @@ body {
             }
         }
     }
+}
+
+
+/* header for dashboard page */
+#site_header {
+
+    padding: 10px 30px;
+    background-color: #f0f0f0;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+
+    &>.navbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        width: 100%;
+        max-width: 1000px;
+        margin: 0 auto;
+
+        &>.left {
+            font-size: 30px;
+
+        }
+
+        &>.right>ul {
+            list-style: none;
+            display: flex;
+            gap: 15px;
+
+            &>li>a {
+                position: relative;
+                text-decoration: none;
+                color: #000;
+                font-weight: 500;
+                transition: all 0.3s ease-in-out;
+
+                &:hover {
+                    color: #007bff;
+
+                    &>.tooltip {
+                        opacity: 1;
+                        visibility: visible;
+                    }
+                }
+
+                &>.tooltip {
+                    position: absolute;
+                    top: 100%;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background-color: #007bff;
+                    color: #fff;
+                    padding: 5px 10px;
+                    border-radius: 5px;
+                    font-size: 14px;
+                    white-space: nowrap;
+                    opacity: 0;
+                    visibility: hidden;
+                    transition: all 0.3s ease-in-out;
+
+                }
+            }
+
+        }
+    }
+
+
+
+}
+
+/* main for dashboard page */
+#site_main {
+    height: calc(100vh - 76px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    .container {
+        max-width: 400px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f0f0f0;
+        border-radius: 10px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+}
+
+/* alert message */
+.alert_message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 0, 0, 0.578);
+    border: 2px solid red;
+    color: black;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    z-index: 1000;
+    transition: all 0.3s ease-in-out;
+    opacity: 1;
+    visibility: visible;
+
+    &>i {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        cursor: pointer;
+
+        &:hover {
+            color: rgba(0, 0, 0, 0.343);
+        }
+    }
+
 }
