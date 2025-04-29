@@ -11,7 +11,8 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
 
-
+    <!-- cdn fontawesone -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
     <title>Registazione</title>
 </head>
@@ -25,7 +26,10 @@
 
                 <div class="container_input">
                     <label for="name_company">Nome azienda:</label>
-                    <input type="text" id="name_company" name="name_company" onblur="check_name()" required>
+
+                    <input type="text" id="name_company" name="name_company" onblur="check_name()" onkeyup="hide_error_name()" required>
+
+
 
                     <span class="error_js" id="error_name_lower">Nome deve essere di almeno 3 carratteri</span>
                     <span class="error_js" id="name_error_greatest">Nome deve essere massimo di 100 carratteri</span>
@@ -33,12 +37,23 @@
 
                 <div class="container_input">
                     <label for="password">Password:</label>
-                    <input type="password" id="password" name="password" required>
+                    <div class="field_password">
+                        <input type="password" id="password" name="password" required>
+                        <i class="fa-solid fa-eye" onclick="showPassword(event)"></i>
+                    </div>
+
                 </div>
 
                 <div class="container_input">
                     <label for="confirm_password">Conferma password:</label>
-                    <input type="password" id="confirm_password" name="confirm_password" required>
+
+                    <div class="field_password">
+                        <input type="password" id="confirm_password" name="confirm_password" onblur="check_password()" onkeyup="hide_error_password()" required>
+                        <i class="fa-solid fa-eye" onclick="showPassword(event)"></i>
+                    </div>
+
+                    <span class="error_js" id="error_password">Le password non combacciano</span>
+                    <span class="error_js" id="error_password_empty">Non puoi lasciare il campo vuoto</span>
                 </div>
 
                 <div class="container_input">
