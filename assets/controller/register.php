@@ -104,7 +104,7 @@ if (!empty($_POST['name_company']) && !empty($_POST['password']) && !empty($_POS
             DB::disconnect($connection);
 
             // Redirect to the dashboard page after successful registration
-            header('location: view/dashboard.php');
+            header('location: ../../view/dashboard.php');
             exit;
         } else {
 
@@ -118,7 +118,7 @@ if (!empty($_POST['name_company']) && !empty($_POST['password']) && !empty($_POS
             $_SESSION['message'] = "Errore durante la registrazione";
 
             // Redirect to the index page with the error message
-            header('Location: ./index.php');
+            header('Location: ../../index.php');
             exit;
         }
     } else {
@@ -130,7 +130,7 @@ if (!empty($_POST['name_company']) && !empty($_POST['password']) && !empty($_POS
         $_SESSION['message'] = $php_error;
 
         // Redirect to the index page with the error messages
-        header('Location: ./index.php');
+        header('Location: ../../index.php');
         exit;
     }
 } else {
@@ -171,7 +171,7 @@ if (!empty($_POST['name_company']) && !empty($_POST['password']) && !empty($_POS
         $_SESSION['message'] = $php_error;
 
         // Redirect to the index page with the error messages
-        header('Location: ./index.php');
+        header('Location: ../../index.php');
         exit;
     }
 }

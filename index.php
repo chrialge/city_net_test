@@ -94,7 +94,7 @@ DB::disconnect($mysqli);
             </a>
 
             <!-- form register -->
-            <form action="register.php" method="POST" onsubmit="check_form(event)">
+            <form action="./assets/controller/register.php" method="POST" onsubmit="check_form(event)">
 
                 <!-- container for input of name_company -->
                 <div class="container_input">
