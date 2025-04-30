@@ -14,7 +14,7 @@ class DB
     public static function connect()
     {
         // creo una istanza dove inserisco le mie costanti del database
-        $connection = new mysqli(DB_SERVERNAME, DB_USERNAME, DB_PASSWORD, DB_NAME);
+        $connection = new mysqli(DB_SERVERNAME, DB_USERNAME, DB_PASSWORD, DB_NAME, DB_PORT);
 
         // se contiene error
         if ($connection && $connection->connect_error) {
