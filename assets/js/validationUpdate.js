@@ -1,5 +1,4 @@
 // utilies
-
 /**
  * function to show or hide password
  * @param {Event} e 
@@ -23,27 +22,12 @@ function showPassword(e) {
 
 }
 
-/**
- * function to close the message error
- */
-function close_message_error() {
-
-    const messageError = document.getElementById("message_error")
-    messageError.style.opacity = 0;
-    messageError.style.visibility = "hidden";
-
-    setTimeout(() => {
-        messageError.style.display = "none";
-    }, 300);
-}
-
 // end utilies
 
-
-// region check fields
+// region of update data of access
 
 /**
- * function to check the name of the company
+ * function to check if the name is valid
  * @returns {boolean} true if the name is valid, false otherwise
  */
 function check_name() {
@@ -75,42 +59,55 @@ function check_name() {
 }
 
 /**
- * function to check the password and confirm password fields
- * @returns {boolean} true if the password is valid, false otherwise
+ * function to hide the error message for the name
  */
-function check_password() {
+function hide_error_name() {
+    const inputValue = document.getElementById("name_company").value.trim();
+    const errorNameLower = document.getElementById("error_name_lower");
+    const errorNameGreatest = document.getElementById("name_error_greatest");
 
-    const passwordValue = document.getElementById("password").value.trim();
-    const passwordConfirmValue = document.getElementById("confirm_password").value.trim();
-
-    if (passwordConfirmValue === "") {
-
-        // If the confirm password field is empty, fields border will be red
-        document.getElementById("password").style.border = "1px solid red";
-        document.getElementById("confirm_password").style.border = "1px solid red";
-
-        // If the confirm password field is empty, show an error message
-        document.getElementById("error_password").style.display = "";
-        document.getElementById("error_password_empty").style.display = "block";
-
-        return false;
-
-    } else if (passwordValue !== passwordConfirmValue) {
-
-        // If the password and confirm password do not match, fields border will be red
-        document.getElementById("password").style.border = "1px solid red";
-        document.getElementById("confirm_password").style.border = "1px solid red";
-
-        // If the password and confirm password do not match, show an error message
-        document.getElementById("error_password").style.display = "block";
-        document.getElementById("error_password_empty").style.display = "";
-
-        return false;
+    if (inputValue.length >= 3 && inputValue.length <= 100) {
+        document.getElementById("name_company").style.border = "";
+        errorNameLower.style.display = "";
+        errorNameGreatest.style.display = "";
     }
 }
 
+
 /**
- * function to check the VAT number
+ * function to check of form access
+ * @param {Event} e 
+ */
+function check_form_access(e) {
+
+    document.querySelector(".btn_submit_access").style.display = "none";
+    document.querySelector(".btn_load_access").style.display = "block";
+    const password = document.getElementById("password").value.trim();
+
+    if (!check_name()) {
+        document.querySelector(".btn_submit_access").style.display = "block";
+        document.querySelector(".btn_load_access").style.display = "none";
+        // Prevent form submission if validation fails
+        e.preventDefault()
+    }
+    if (password.length === 0) {
+        console.log('ciao')
+        document.getElementById("password").style.border = "1px solid red";
+        document.getElementById("error_password").style.display = "block";
+        document.querySelector(".btn_submit_access").style.display = "block";
+        document.querySelector(".btn_load_access").style.display = "none";
+        // Prevent form submission if validation fails
+        e.preventDefault()
+    }
+
+}
+
+// end region of update data of access
+
+// region updatte data of company
+
+/**
+ * function to check if the VAT number is valid
  * @returns {boolean} true if the VAT number is valid, false otherwise
  */
 function check_vat() {
@@ -129,7 +126,7 @@ function check_vat() {
 }
 
 /**
- * function to check the telephone number
+ * function to check if the telephone number is valid
  * @returns {boolean} true if the telephone number is valid, false otherwise
  */
 function check_telephone() {
@@ -148,7 +145,7 @@ function check_telephone() {
 }
 
 /**
- * function to check the email address
+ * function to check if the email is valid
  * @returns {boolean} true if the email is valid, false otherwise
  */
 function check_email() {
@@ -186,7 +183,7 @@ function check_address(type) {
 }
 
 /**
- * function to check the CAP (postal code)
+ * function to check if the cap is valid
  * @returns {boolean} true if the cap is valid, false otherwise
  */
 function check_cap() {
@@ -203,44 +200,8 @@ function check_cap() {
     }
 }
 
-// end region check fields
-
-// region hide error message
-
 /**
- * function to hide the error message for the name field
- */
-function hide_error_name() {
-    const inputValue = document.getElementById("name_company").value.trim();
-    const errorNameLower = document.getElementById("error_name_lower");
-    const errorNameGreatest = document.getElementById("name_error_greatest");
-
-    if (inputValue.length >= 3 && inputValue.length <= 100) {
-        document.getElementById("name_company").style.border = "";
-        errorNameLower.style.display = "";
-        errorNameGreatest.style.display = "";
-    }
-}
-
-/**
- * function to hide the error message for the password field
- */
-function hide_error_password() {
-
-    const passwordValue = document.getElementById("password").value.trim();
-    const passwordConfirmValue = document.getElementById("confirm_password").value.trim();
-
-    if (passwordValue === passwordConfirmValue) {
-        document.getElementById("password").style.border = "";
-        document.getElementById("confirm_password").style.border = "";
-        document.getElementById("error_password").style.display = "";
-        document.getElementById("error_password_empty").style.display = "";
-    }
-
-}
-
-/**
- * function to hide the error message for the VAT number field
+ * function to hide the error message for the VAT number
  */
 function hide_error_vat() {
     const inputValue = document.getElementById("vat_number").value.trim();
@@ -254,7 +215,7 @@ function hide_error_vat() {
 }
 
 /**
- * function to hide the error message for the telephone number field
+ * function to hide the error message for the telephone number
  */
 function hide_error_telephone() {
     const inputValue = document.getElementById("telephone").value.trim();
@@ -269,7 +230,7 @@ function hide_error_telephone() {
 }
 
 /**
- * function to hide the error message for the email address field
+ * function to hide the error message for the email
  */
 function hide_error_email() {
     const inputValue = document.getElementById("email").value.trim();
@@ -282,9 +243,10 @@ function hide_error_email() {
     }
 }
 
+
 /**
- * function to hide the error message for the address fields (province, city, address)
- * @param {String} type tipology of address (province, city, address) 
+ * function to hide the error message for the address
+ * @param {String} type tipology of address (province, city, address)
  */
 function hide_error_address(type) {
     const inputValue = document.getElementById(type).value.trim();
@@ -297,7 +259,7 @@ function hide_error_address(type) {
 }
 
 /**
- * function to hide the error message for the CAP (postal code) field
+ * function to hide the error message for the cap
  */
 function hide_error_cap() {
     const inputValue = document.getElementById("cap").value.trim();
@@ -310,15 +272,13 @@ function hide_error_cap() {
     }
 }
 
-// end region hide error message
-
 /**
- * function to check the form before submission
+ * function to check if the form data is valid
  * @param {Event} e 
  */
-function check_form(e) {
-    document.querySelector(".btn_submit").style.display = "none";
-    document.querySelector(".btn_load").style.display = "block";
+function check_form_data(e) {
+    document.querySelector(".btn_submit_data").style.display = "none";
+    document.querySelector(".btn_load_data").style.display = "block";
 
     const province = check_address('province');
     const city = check_address('city');
@@ -326,22 +286,10 @@ function check_form(e) {
     const cap = check_cap();
 
 
-
-
-    if (!check_name()) {
-        e.preventDefault();
-        document.querySelector(".btn_submit").style.display = "block";
-        document.querySelector(".btn_load").style.display = "none";
-    }
-    if (!check_password()) {
-        e.preventDefault();
-        document.querySelector(".btn_submit").style.display = "block";
-        document.querySelector(".btn_load").style.display = "none";
-    }
     if (!check_vat()) {
         e.preventDefault();
-        document.querySelector(".btn_submit").style.display = "block";
-        document.querySelector(".btn_load").style.display = "none";
+        document.querySelector(".btn_submit_data").style.display = "block";
+        document.querySelector(".btn_load_data").style.display = "none";
     }
     if (!check_email() && document.getElementById("email").value.trim().length > 0) {
         e.preventDefault();
@@ -356,8 +304,10 @@ function check_form(e) {
     if (!province || !city || !address || !cap) {
         document.getElementById('error_address_all').style.display = "block";
         e.preventDefault();
-        document.querySelector(".btn_submit").style.display = "block";
-        document.querySelector(".btn_load").style.display = "none";
+        document.querySelector(".btn_submit_data").style.display = "block";
+        document.querySelector(".btn_load_data").style.display = "none";
     }
 
 }
+
+// end region of update data of company

@@ -10,7 +10,7 @@ $mysqli->query("CREATE TABLE IF NOT EXISTS `companies` (
     `id` BIGINT NOT NULL AUTO_INCREMENT,
     `name_company` VARCHAR(100) NOT NULL,
     `password` VARCHAR(100) NOT NULL,
-    `vat_number` VARCHAR(11) NOT NULL,
+    `vat_number` CHAR(11) NOT NULL,
     `telephone` VARCHAR(13) DEFAULT NULL,
     `email` VARCHAR(100) DEFAULT NULL,
     `birth_of_day` DATE DEFAULT NULL,
@@ -158,7 +158,7 @@ DB::disconnect($mysqli);
                     <!-- field of province -->
                     <div class="field_address">
                         <label for="province">Provincia:*</label>
-                        <input type="text" id="province" name="province" onblur="check_address(event, 'province')" onkeyup="hide_error_address('province')" required>
+                        <input type="text" id="province" name="province" onblur="check_address('province')" onkeyup="hide_error_address('province')" required>
 
                         <!-- error js -->
                         <span class="error_js" id="error_province">
@@ -169,7 +169,7 @@ DB::disconnect($mysqli);
                     <!-- field of city -->
                     <div class="field_address">
                         <label for="city">Comune:*</label>
-                        <input type="text" id="city" name="city" onblur="check_address(event, 'city')" onkeyup="hide_error_address('city')" required>
+                        <input type="text" id="city" name="city" onblur="check_address('city')" onkeyup="hide_error_address('city')" required>
 
                         <!-- error js -->
                         <span class="error_js" id="error_city">
@@ -180,7 +180,7 @@ DB::disconnect($mysqli);
                     <!-- field of address/street -->
                     <div class="field_address">
                         <label for="address">Indirizzo:*</label>
-                        <input type="text" id="address" name="address" onblur="check_address(event, 'address')" onkeyup="hide_error_address('address')" required>
+                        <input type="text" id="address" name="address" onblur="check_address('address')" onkeyup="hide_error_address('address')" required>
 
                         <!-- error js -->
                         <span class="error_js" id="error_address">

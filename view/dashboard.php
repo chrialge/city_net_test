@@ -33,9 +33,20 @@
             <!-- right -->
             <div class="right">
                 <ul>
+
+                    <!-- Dashboard -->
+                    <li>
+                        <a href="./dashboard.php">
+                            <i class="fa-solid fa-table-columns"></i>
+                            <div class="tooltip">
+                                <span>Dashboard</span>
+                            </div>
+                        </a>
+                    </li>
+
                     <!-- setting -->
                     <li>
-                        <a href="#">
+                        <a href="./setting.php">
 
                             <i class="fa-solid fa-gears"></i>
                             <div class="tooltip">
@@ -58,6 +69,26 @@
         </nav>
     </header>
 
+    <!-- message session php -->
+    <?php
+    // Start the session
+    session_start();
+
+    // Check if the session variable is set and display the message
+    if (isset($_SESSION['message'])) {
+
+        // Display the message in a div with a class of "alert_message"
+        echo "<div class='alert_message_succefull'>
+                    <span>" . $_SESSION['message'] . "</span>
+                    <i class='fa-solid fa-xmark' onclick='close_message_error(event)'></i>
+                 </div>";
+
+        // Unset the session variable to avoid showing the message again on refresh
+        unset($_SESSION['message']);
+    }
+    ?>
+
+
     <!-- site main -->
     <main id="site_main">
         <div class="container">
@@ -66,6 +97,8 @@
 
         </div>
     </main>
+
+    <script src="../assets/js/function.js"></script>
 </body>
 
 </html>

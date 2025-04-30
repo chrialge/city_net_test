@@ -1,3 +1,7 @@
+/**
+ * function to check if the name is valid
+ * @returns {boolean} true if the name is valid, false otherwise
+ */
 function check_name() {
 
     const inputValue = document.getElementById("name_company").value.trim();
@@ -26,6 +30,9 @@ function check_name() {
     }
 }
 
+/**
+ * function to hide the error message of the name
+ */
 function hide_error_name() {
     const inputValue = document.getElementById("name_company").value.trim();
     const errorNameLower = document.getElementById("error_name_lower");
@@ -38,6 +45,10 @@ function hide_error_name() {
     }
 }
 
+/**
+ * function to show the password
+ * @param {Event} e 
+ */
 function showPassword(e) {
     const idElement = e.target.parentElement.children[0].getAttribute("id");
     const iconClass = e.target.classList[1];
@@ -57,6 +68,9 @@ function showPassword(e) {
 
 }
 
+/**
+ * function close the message error
+ */
 function close_message_error() {
 
     const messageError = document.getElementById("message_error")
@@ -67,6 +81,10 @@ function close_message_error() {
     }, 300);
 }
 
+/**
+ * function to check if the form is valid
+ * @param {Event} e 
+ */
 function check_form(e) {
 
     document.querySelector(".btn_submit").style.display = "none";
