@@ -53,7 +53,7 @@ function check_name() {
     const errorNameGreatest = document.getElementById("name_error_greatest");
 
 
-    console.log(inputValue, errorNameLower, errorNameGreatest);
+
     if (inputValue.length < 3) {
         document.getElementById("name_company").style.border = "1px solid red";
 
