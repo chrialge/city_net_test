@@ -234,6 +234,16 @@ function showPassword(e) {
 
 }
 
+function close_message_error() {
+
+    const messageError = document.getElementById("message_error")
+    messageError.style.opacity = 0;
+    messageError.style.visibility = "hidden";
+
+    setTimeout(() => {
+        messageError.style.display = "none";
+    }, 300);
+}
 
 function check_form(e) {
     document.querySelector(".btn_submit").style.display = "none";

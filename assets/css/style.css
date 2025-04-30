@@ -5,15 +5,80 @@ body {
     font-family: "Roboto", sans-serif;
 }
 
+/* alert message */
+.alert_message {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: rgba(255, 0, 0, 0.578);
+    border: 2px solid red;
+    color: black;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    z-index: 1000;
+    transition: all 0.3s ease-in-out;
+    opacity: 1;
+    visibility: visible;
+
+    &>i {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        cursor: pointer;
+
+        &:hover {
+            color: rgba(0, 0, 0, 0.343);
+        }
+    }
+
+}
+
+/* end alert message */
+
+/* message error list */
+.alert_message_list {
+    position: relative;
+    width: 100%;
+    max-width: 300px;
+    margin: 10px auto;
+    background-color: rgba(255, 0, 0, 0.578);
+    border: 2px solid red;
+    color: black;
+    padding: 10px 20px;
+    border-radius: 5px;
+    font-size: 16px;
+    opacity: 1;
+    visibility: visible;
+    transition: all 0.3s ease-in-out;
+
+    &>i {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        cursor: pointer;
+
+        &:hover {
+            color: rgba(0, 0, 0, 0.343);
+        }
+    }
+}
+
+/* end message error list */
+
+/* page register and login */
 .page_register,
 .page_login {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
+    flex-wrap: wrap;
 
 
     &>.container_credentials {
+        margin: 20px auto;
         max-width: 500px;
         width: 85%;
         background-color: #f0f0f0;
@@ -188,6 +253,7 @@ body {
     }
 }
 
+/* end page register and login */
 
 /* header for dashboard page */
 #site_header {
@@ -255,6 +321,8 @@ body {
 
 }
 
+/* end header for dashboard page */
+
 /* main for dashboard page */
 #site_main {
     height: calc(100vh - 76px);
@@ -272,32 +340,4 @@ body {
     }
 }
 
-/* alert message */
-.alert_message {
-    position: fixed;
-    top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    background-color: rgba(255, 0, 0, 0.578);
-    border: 2px solid red;
-    color: black;
-    padding: 10px 20px;
-    border-radius: 5px;
-    font-size: 16px;
-    z-index: 1000;
-    transition: all 0.3s ease-in-out;
-    opacity: 1;
-    visibility: visible;
-
-    &>i {
-        position: absolute;
-        top: 5px;
-        right: 5px;
-        cursor: pointer;
-
-        &:hover {
-            color: rgba(0, 0, 0, 0.343);
-        }
-    }
-
-}
+/* end main for dashboard page */

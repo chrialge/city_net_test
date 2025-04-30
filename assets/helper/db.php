@@ -6,7 +6,7 @@ require_once __DIR__ . '../../../env.php';
 // classe DB dove ci sono due funzione per la connesione e la disconessione del databse
 class DB
 {
-    // funzione che attiva la connesione al database
+
     /**
      * funzione che crea una istanza per la connesione al dtabase
      * @return mysqli_connection
