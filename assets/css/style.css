@@ -1,8 +1,23 @@
+:root {
+    --primary-color: #007bff;
+    --background-color: #f0f8ff;
+    --background-footer-heder: #1e90ff;
+    --text-primary-color: #2c3e50;
+    --text-secondary-color: #7f8c8d;
+    --btn-active-color: #48c9b0;
+    --btn-color: #ff6b6b;
+}
+
+
 body {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: "Roboto", sans-serif;
+    font-family: "Press Start 2P", system-ui !important;
+    font-size: 10px !important;
+    line-height: 0.9rem;
+    background-color: var(--background-color);
+    color: var(--text-primary-color);
 }
 
 /* alert message */
@@ -16,7 +31,7 @@ body {
     color: black;
     padding: 10px 20px;
     border-radius: 5px;
-    font-size: 16px;
+
     z-index: 1000;
     transition: all 0.3s ease-in-out;
     opacity: 1;
@@ -66,6 +81,87 @@ body {
 }
 
 /* end message error list */
+.input-container {
+    position: relative;
+    margin: 15px 0;
+    width: 100%
+}
+
+.input-container input[type="text"],
+.input-container input[type="password"] {
+    font-size: 10px;
+    width: 100%;
+    border: none;
+    border-bottom: 2px solid #ccc;
+    padding: 5px 0;
+    background-color: transparent;
+    outline: none;
+}
+
+.input-container .label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    color: #ccc;
+    transition: all 0.3s ease;
+    pointer-events: none;
+}
+
+.input-container input[type="text"]:focus~.label,
+.input-container input[type="text"]:valid~.label,
+.input-container input[type="password"]:focus~.label,
+.input-container input[type="password"]:valid~.label {
+    top: -20px;
+    font-size: 10px;
+    color: var(--text-primary-color);
+}
+
+.input-container .underline {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background-color: var(--text-primary-color);
+    transform: scaleX(0);
+    transition: all 0.3s ease;
+}
+
+.input-container input[type="text"]:focus~.underline,
+.input-container input[type="text"]:valid~.underline,
+.input-container input[type="password"]:focus~.underline,
+.input-container input[type="password"]:valid~.underline {
+    transform: scaleX(1);
+}
+
+#icon-eye {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 15px;
+}
+
+.error_js {
+    color: red;
+    font-size: 8px;
+    display: none;
+    margin-bottom: 10px;
+}
+
+.login-registraztion-link {
+    font-size: 8px;
+    margin: 10px 0;
+    text-decoration: none;
+    color: #000;
+    transition: all 0.2s ease-in-out;
+    display: inline-block;
+
+    &:hover {
+        color: var(--primary-color);
+        text-decoration: underline;
+    }
+}
 
 /* page register and login */
 .page_register,
@@ -75,20 +171,20 @@ body {
     align-items: center;
     min-height: 100vh;
     flex-wrap: wrap;
-
+    background-color: var(--background-color);
 
     &>.container_credentials {
         margin: 20px auto;
-        max-width: 500px;
+        max-width: 300px;
         width: 85%;
-        background-color: #f0f0f0;
+        background-color: #ffffff;
         padding: 20px;
         border-radius: 10px;
         box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
 
-        &>h1 {
+        &>h5 {
             text-align: center;
-            margin: 0 0 20px;
+            margin: 10px 0 30px;
         }
 
         &>a {
@@ -99,124 +195,11 @@ body {
         &>form {
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 15px;
-
-            &>.container_input {
-                display: flex;
-                flex-direction: column;
-                width: 100%;
-                gap: 5px;
-
-                &>label {
-                    font-weight: 500;
-                }
-
-                &>input {
-                    outline: none;
-                    padding: 7px;
-                    border-radius: 3px;
-                    border: 1px solid black;
-                    background-color: #fff;
-
-                    transition: all 0.3s ease-in-out;
-
-                    &:focus {
-                        border: 1px solid #007bff;
-                        box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3);
-                    }
-                }
-
-                &>.error_js {
-                    color: red;
-                    font-size: 14px;
-                    display: none;
-                }
-
-                &>.field_password {
-                    width: 100%;
-                    position: relative;
-                    display: flex;
-
-                    &>input {
-                        width: 100%;
-                        display: block;
-                        outline: none;
-                        padding: 7px;
-                        border-radius: 3px;
-                        border: 1px solid black;
-                        background-color: #fff;
-
-                        transition: all 0.3s ease-in-out;
-
-                        &:focus {
-                            border: 1px solid #007bff;
-                            box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3);
-                        }
-                    }
-
-                    &>i {
-                        position: absolute;
-                        top: 50%;
-                        right: 10px;
-                        transform: translateY(-50%);
-                        cursor: pointer;
-                        font-size: 20px;
-                        color: #007bff;
-
-                        &:hover {
-                            color: #0056b3;
-                        }
-                    }
-                }
 
 
 
-            }
 
-            &>.container_input_address {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
 
-                &>.field_address {
-                    width: calc(50% - 5px);
-                    display: flex;
-                    flex-direction: column;
-                    gap: 5px;
-
-                    &>label {
-                        font-weight: 500;
-                    }
-
-                    &>input {
-                        outline: none;
-                        padding: 7px;
-                        border-radius: 3px;
-                        border: 1px solid black;
-                        background-color: #fff;
-
-                        transition: all 0.3s ease-in-out;
-
-                        &:focus {
-                            border: 1px solid #007bff;
-                            box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3);
-                        }
-                    }
-
-                    &>.error_js {
-                        color: red;
-                        font-size: 14px;
-                        display: none;
-                    }
-                }
-
-                &>.error_js {
-                    color: red;
-                    font-size: 14px;
-                    display: none;
-                }
-            }
 
             &>.button_form {
 
@@ -228,7 +211,7 @@ body {
                     border: none;
                     background-color: #007bff;
                     color: #fff;
-                    font-size: 17px;
+
                     transition: all 0.3s ease-in-out;
 
                     &:hover {
@@ -243,7 +226,7 @@ body {
                     border: none;
                     background-color: #007bff7e;
                     color: #fff;
-                    font-size: 17px;
+
                     display: none;
                     ;
                 }
@@ -377,14 +360,10 @@ body {
 
 #site_main_setting {
 
-    margin-bottom: 50px;
-    display: flex;
-    flex-direction: column;
 
-    &>.container_access,
     &>.container_data {
         width: 80%;
-        max-width: 700px;
+        max-width: 300px;
         margin: 30px auto;
         padding: 20px;
         background-color: #f0f0f0;
@@ -397,123 +376,11 @@ body {
         }
 
         &>form {
-            align-items: center;
             display: flex;
             flex-direction: column;
-            gap: 15px;
 
-            &>.container_input {
-                display: flex;
-                flex-direction: column;
-                width: 100%;
-                gap: 5px;
 
-                &>label {
-                    font-weight: 500;
-                }
 
-                &>input {
-                    outline: none;
-                    padding: 7px;
-                    border-radius: 3px;
-                    border: 1px solid black;
-                    background-color: #fff;
-                    transition: all 0.3s ease-in-out;
-
-                    &:focus {
-                        border: 1px solid #007bff;
-                        box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3);
-                    }
-                }
-
-                &>.error_js {
-                    color: red;
-                    font-size: 14px;
-                    display: none;
-                }
-
-                &>.field_password {
-                    width: 100%;
-                    position: relative;
-                    display: flex;
-
-                    &>input {
-                        width: 100%;
-                        display: block;
-                        outline: none;
-                        padding: 7px;
-                        border-radius: 3px;
-                        border: 1px solid black;
-                        background-color: #fff;
-
-                        transition: all 0.3s ease-in-out;
-
-                        &:focus {
-                            border: 1px solid #007bff;
-                            box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3);
-                        }
-                    }
-
-                    &>i {
-                        position: absolute;
-                        top: 50%;
-                        right: 10px;
-                        transform: translateY(-50%);
-                        cursor: pointer;
-                        font-size: 20px;
-                        color: #007bff;
-
-                        &:hover {
-                            color: #0056b3;
-                        }
-                    }
-                }
-
-            }
-
-            &>.container_input_address {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 10px;
-
-                &>.field_address {
-                    width: calc(50% - 5px);
-                    display: flex;
-                    flex-direction: column;
-                    gap: 5px;
-
-                    &>label {
-                        font-weight: 500;
-                    }
-
-                    &>input {
-                        outline: none;
-                        padding: 7px;
-                        border-radius: 3px;
-                        border: 1px solid black;
-                        background-color: #fff;
-
-                        transition: all 0.3s ease-in-out;
-
-                        &:focus {
-                            border: 1px solid #007bff;
-                            box-shadow: 0 0 0 5px rgba(0, 123, 255, 0.3);
-                        }
-                    }
-
-                    &>.error_js {
-                        color: red;
-                        font-size: 14px;
-                        display: none;
-                    }
-                }
-
-                &>.error_js {
-                    color: red;
-                    font-size: 14px;
-                    display: none;
-                }
-            }
 
             &>.button_form {
 

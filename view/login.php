@@ -1,21 +1,12 @@
 <!DOCTYPE html>
 <html lang="en">
 
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="../assets/css/style.css">
+<?php
+$pagina = "Login";
+$base_url = "../";
+require_once __DIR__ . '\..\assets\partials\head.php';
+?>
 
-    <!-- google font for ROBOTO -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-
-    <!-- cdn fontawesone -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.7.2/css/all.min.css" integrity="sha512-Evv84Mr4kqVGRNSgIGL/F/aIDqQb7xQ2vcrdIwxfjThSH8CSR7PBEakCr51Ck+w+/U6swU2Im1vVX0SVk9ABhg==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-
-    <title>Login</title>
-</head>
 
 <body>
     <div class="page_login">
@@ -47,40 +38,37 @@
         <div class="container_credentials">
 
             <!-- title -->
-            <h1>Accedi</h1>
+            <h5>Accedi</h5>
 
-            <!-- link for register page  -->
-            <a href="../index.php">
-                Non hai gia un account? Registrati
-            </a>
+
 
             <!-- form for login -->
             <form action="../assets/controller/login.php" method="POST" onsubmit="check_form(event)">
 
-                <!-- container for input of name_company -->
-                <div class="container_input">
-                    <label for="name_company">Nome azienda:*</label>
-                    <input type="text" id="name_company" name="name_company" onblur="check_name()" onkeyup="hide_error_name()" required>
+                <div class="input-container">
+                    <input type="text" id="email" name="email" required="true" onblur="check_email()" onkeyup="hide_error_email()">
+                    <label for="email" class="label" id="label-email">Email</label>
+                    <div id="underline-email" class="underline"></div>
+                </div>
+                <span class="error_js" id="error_email">l'email non è valida</span>
 
-                    <!-- error js -->
-                    <span class="error_js" id="error_name_lower">Nome deve essere di almeno 3 carratteri</span>
-                    <span class="error_js" id="name_error_greatest">Nome deve essere massimo di 100 carratteri</span>
+                <div class="input-container">
+                    <input type="password" id="password" name="password" required="true" style="padding-right: 30px;">
+                    <label for="password" class="label">Password</label>
+                    <i class="fa-solid fa-eye" id="icon-eye" onclick="showPassword(event)"></i>
+                    <div class="underline"></div>
                 </div>
 
-                <!-- container for input of password -->
-                <div class="container_input">
-                    <label for="password">Password:*</label>
+                <span class="error_js" id="error_password">Devi mettere la password</span>
 
-                    <!-- field of password -->
-                    <div class="field_password">
-                        <input type="password" id="password" name="password" required>
-                        <i class="fa-solid fa-eye" onclick="showPassword(event)"></i>
-                    </div>
 
-                    <!-- error js-->
-                    <span class="error_js" id="error_password">Devi mettere la password</span>
-                </div>
 
+
+
+                <!-- link for register page  -->
+                <a href="../index.php" class="login-registraztion-link">
+                    Non hai gia un account?
+                </a>
                 <!-- container buttons -->
                 <div class="button_form">
 
@@ -94,7 +82,7 @@
         </div>
     </div>
 
-    <script src="../assets/js/validationLogin.js"></script>
+    <script src="../assets/js/script.js"></script>
 </body>
 
 </html>

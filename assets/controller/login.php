@@ -4,11 +4,12 @@ require_once __DIR__ . '/../helper/db.php';
 require_once __DIR__ . '/../helper/Auth.php';
 
 
+
 // if the form is submitted
-if (!empty($_POST['name_company']) && !empty($_POST['password'])) {
+if (!empty($_POST['email']) && !empty($_POST['password'])) {
 
     // save the username and password in variables
-    $username = $_POST['name_company'];
+    $username = $_POST['email'];
     $password = $_POST['password'];
 
     // connect to the database

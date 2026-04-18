@@ -21,7 +21,7 @@ function showPassword(e) {
 
 
 }
-
+console.log("validationUpdate.js loaded");
 // end utilies
 
 // region of update data of access
@@ -32,12 +32,14 @@ function showPassword(e) {
  */
 function check_name() {
 
-    const inputValue = document.getElementById("name_company").value.trim();
+    const inputValue = document.getElementById("nome").value.trim();
     const errorNameLower = document.getElementById("error_name_lower");
     const errorNameGreatest = document.getElementById("name_error_greatest");
 
     if (inputValue.length < 3) {
-        document.getElementById("name_company").style.border = "1px solid red";
+        document.getElementById("nome").style.borderBottomColor = "red";
+        document.getElementById("underline-nome").style.backgroundColor = "red";
+        document.getElementById("label-nome").style.color = "red";
 
         errorNameLower.style.display = "block";
         errorNameGreatest.style.display = "none";
@@ -45,7 +47,9 @@ function check_name() {
         return false;
 
     } else if (inputValue.length > 100) {
-        document.getElementById("name_company").style.border = "1px solid red";
+        document.getElementById("nome").style.borderBottomColor = "red";
+        document.getElementById("underline-nome").style.backgroundColor = "red";
+        document.getElementById("label-nome").style.color = "red";
 
         errorNameLower.style.display = "none";
         errorNameGreatest.style.display = "block";
@@ -60,14 +64,112 @@ function check_name() {
  * function to hide the error message for the name
  */
 function hide_error_name() {
-    const inputValue = document.getElementById("name_company").value.trim();
+    const inputValue = document.getElementById("nome").value.trim();
     const errorNameLower = document.getElementById("error_name_lower");
     const errorNameGreatest = document.getElementById("name_error_greatest");
 
     if (inputValue.length >= 3 && inputValue.length <= 100) {
-        document.getElementById("name_company").style.border = "";
+        document.getElementById("nome").style.borderBottomColor = "";
+        document.getElementById("underline-nome").style.backgroundColor = "";
+        document.getElementById("label-nome").style.color = "";
         errorNameLower.style.display = "";
         errorNameGreatest.style.display = "";
+    }
+}
+
+/**
+ * function to check the name of the company
+ * @returns {boolean} true if the name is valid, false otherwise
+ */
+function check_cognome() {
+
+    const inputValue = document.getElementById("cognome").value.trim();
+    const errorCognomeLower = document.getElementById("error_cognome_lower");
+    const errorCognomeGreatest = document.getElementById("error_cognome_greatest");
+
+
+
+    if (inputValue.length < 3) {
+        document.getElementById("cognome").style.borderBottomColor = "red";
+        document.getElementById("underline-cognome").style.backgroundColor = "red";
+        document.getElementById("label-cognome").style.color = "red";
+
+        errorCognomeLower.style.display = "block";
+        errorCognomeGreatest.style.display = "none";
+
+        return false;
+
+    } else if (inputValue.length > 100) {
+        document.getElementById("cognome").style.borderBottomColor = "red";
+        document.getElementById("underline-cognome").style.backgroundColor = "red";
+        document.getElementById("label-cognome").style.color = "red";
+
+        errorCognomeLower.style.display = "none";
+        errorCognomeGreatest.style.display = "block";
+
+        return false;
+    } else {
+        return true;
+    }
+}
+
+/**
+ * function to hide the error message for the name field
+ */
+function hide_error_cognome() {
+    const inputValue = document.getElementById("cognome").value.trim();
+    const errorCognomeLower = document.getElementById("error_cognome_lower");
+    const errorCognomeGreatest = document.getElementById("error_cognome_greatest");
+
+    if (inputValue.length >= 3 && inputValue.length <= 100) {
+        document.getElementById("cognome").style.borderBottomColor = "";
+        document.getElementById("underline-cognome").style.backgroundColor = "";
+        document.getElementById("label-cognome").style.color = "";
+
+        errorCognomeLower.style.display = "";
+        errorCognomeGreatest.style.display = "";
+    }
+}
+
+
+/**
+ * function to check if the email is valid
+ * @returns {boolean} true if the email is valid, false otherwise
+ */
+function check_email() {
+
+    const inputValue = document.getElementById("email").value.trim();
+    const errorEmail = document.getElementById("error_email");
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (!regex.test(inputValue) || inputValue.length < 3 || inputValue.length > 255) {
+        document.getElementById("underline-email").style.backgroundColor = "red";
+        document.getElementById("label-email").style.color = "red";
+        document.getElementById("email").style.borderBottomColor = "red";
+        errorEmail.style.display = "block";
+        return false;
+    } else {
+        return true;
+    }
+}
+
+
+
+
+
+/**
+ * function to hide the error message for the email
+ */
+function hide_error_email() {
+    const inputValue = document.getElementById("email").value.trim();
+    const errorEmail = document.getElementById("error_email");
+    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    if (regex.test(inputValue) && inputValue.length >= 3 && inputValue.length <= 255) {
+        document.getElementById("underline-email").style.backgroundColor = "";
+        document.getElementById("label-email").style.color = "";
+        document.getElementById("email").style.borderBottomColor = "";
+        errorEmail.style.display = "";
     }
 }
 
@@ -102,210 +204,3 @@ function check_form_access(e) {
 
 // end region of update data of access
 
-// region updatte data of company
-
-/**
- * function to check if the VAT number is valid
- * @returns {boolean} true if the VAT number is valid, false otherwise
- */
-function check_vat() {
-    const inputValue = document.getElementById("vat_number").value.trim();
-    const errorVat = document.getElementById("error_vat");
-    const regex = /^[0-9]/;
-
-
-    if (inputValue.length !== 11 || !regex.test(inputValue)) {
-        document.getElementById("vat_number").style.border = "1px solid red";
-        errorVat.style.display = "block";
-        return false;
-    } else {
-        return true;
-    }
-}
-
-/**
- * function to check if the telephone number is valid
- * @returns {boolean} true if the telephone number is valid, false otherwise
- */
-function check_telephone() {
-    const inputValue = document.getElementById("telephone").value.trim();
-    const errorTelephone = document.getElementById("error_telephone");
-    const regex = /^[0-9]/;
-
-
-    if (!regex.test(inputValue) || inputValue.length < 9 || inputValue.length > 10) {
-        document.getElementById("telephone").style.border = "1px solid red";
-        errorTelephone.style.display = "block";
-        return false;
-    } else {
-        return true;
-    }
-}
-
-/**
- * function to check if the email is valid
- * @returns {boolean} true if the email is valid, false otherwise
- */
-function check_email() {
-
-    const inputValue = document.getElementById("email").value.trim();
-    const errorEmail = document.getElementById("error_email");
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (!regex.test(inputValue) || inputValue.length < 3 || inputValue.length > 255) {
-        document.getElementById("email").style.border = "1px solid red";
-        errorEmail.style.display = "block";
-        return false;
-    } else {
-        return true;
-    }
-}
-
-/**
- * function to check if the address is valid
- * @param {String} type tipology of address (province, city, address)
- * @returns {boolean} true if the address is valid, false otherwise
- */
-function check_address(type) {
-    const inputValue = document.getElementById(type).value.trim();
-    const errorAddress = document.getElementById(`error_${type}`);
-
-    if (inputValue.length < 3 || inputValue.length > 100) {
-        document.getElementById(type).style.border = "1px solid red";
-        errorAddress.style.display = "block";
-
-        return false;
-    } else {
-        return true;
-    }
-}
-
-/**
- * function to check if the cap is valid
- * @returns {boolean} true if the cap is valid, false otherwise
- */
-function check_cap() {
-    const inputValue = document.getElementById("cap").value.trim();
-    const errorCap = document.getElementById("error_cap");
-    const regex = /^[0-9]{5}$/;
-
-    if (!regex.test(inputValue)) {
-        document.getElementById("cap").style.border = "1px solid red";
-        errorCap.style.display = "block";
-        return false;
-    } else {
-        return true;
-    }
-}
-
-/**
- * function to hide the error message for the VAT number
- */
-function hide_error_vat() {
-    const inputValue = document.getElementById("vat_number").value.trim();
-    const errorVat = document.getElementById("error_vat");
-    const regex = /^[0-9]{11}$/;
-
-    if (inputValue.length === 11 && regex.test(inputValue)) {
-        document.getElementById("vat_number").style.border = "";
-        errorVat.style.display = "";
-    }
-}
-
-/**
- * function to hide the error message for the telephone number
- */
-function hide_error_telephone() {
-    const inputValue = document.getElementById("telephone").value.trim();
-    const errorTelephone = document.getElementById("error_telephone");
-    const regex = /^[0-9]/;
-
-
-    if (regex.test(inputValue) && inputValue.length >= 9 && inputValue.length <= 10) {
-        document.getElementById("telephone").style.border = "";
-        errorTelephone.style.display = "";
-    }
-}
-
-/**
- * function to hide the error message for the email
- */
-function hide_error_email() {
-    const inputValue = document.getElementById("email").value.trim();
-    const errorEmail = document.getElementById("error_email");
-    const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-    if (regex.test(inputValue) && inputValue.length >= 3 && inputValue.length <= 255) {
-        document.getElementById("email").style.border = "";
-        errorEmail.style.display = "";
-    }
-}
-
-
-/**
- * function to hide the error message for the address
- * @param {String} type tipology of address (province, city, address)
- */
-function hide_error_address(type) {
-    const inputValue = document.getElementById(type).value.trim();
-    const errorAddress = document.getElementById(`error_${type}`);
-
-    if (inputValue.length >= 3) {
-        document.getElementById(type).style.border = "";
-        errorAddress.style.display = "";
-    }
-}
-
-/**
- * function to hide the error message for the cap
- */
-function hide_error_cap() {
-    const inputValue = document.getElementById("cap").value.trim();
-    const errorCap = document.getElementById("error_cap");
-    const regex = /^[0-9]{5}$/;
-
-    if (regex.test(inputValue)) {
-        document.getElementById("cap").style.border = "";
-        errorCap.style.display = "";
-    }
-}
-
-/**
- * function to check if the form data is valid
- * @param {Event} e 
- */
-function check_form_data(e) {
-    document.querySelector(".btn_submit_data").style.display = "none";
-    document.querySelector(".btn_load_data").style.display = "block";
-
-    const province = check_address('province');
-    const city = check_address('city');
-    const address = check_address('address');
-    const cap = check_cap();
-
-
-    if (!check_vat()) {
-        e.preventDefault();
-        document.querySelector(".btn_submit_data").style.display = "block";
-        document.querySelector(".btn_load_data").style.display = "none";
-    }
-    if (!check_email() && document.getElementById("email").value.trim().length > 0) {
-        e.preventDefault();
-        document.querySelector(".btn_submit_data").style.display = "block";
-        document.querySelector(".btn_load_data").style.display = "none";
-    }
-    if (!check_telephone() && document.getElementById("telephone").value.trim().length > 0) {
-        e.preventDefault();
-        document.querySelector(".btn_submit_data").style.display = "block";
-        document.querySelector(".btn_load_data").style.display = "none";
-    }
-    if (!province || !city || !address || !cap) {
-        document.getElementById('error_address_all').style.display = "block";
-        e.preventDefault();
-        document.querySelector(".btn_submit_data").style.display = "block";
-        document.querySelector(".btn_load_data").style.display = "none";
-    }
-
-}
-
-// end region of update data of company

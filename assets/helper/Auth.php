@@ -24,7 +24,7 @@ class Auth
         $hashedPassword = md5($password);
 
         // restituisce i risultati della query
-        $result = $connection->query("SELECT `id`, `name_company`, 'password' FROM `companies` WHERE `name_company` = '$username' AND `password` = '$hashedPassword'");
+        $result = $connection->query("SELECT `id`, `email`, 'password' FROM `utenti` WHERE `email` = '$username' AND `password` = '$hashedPassword'");
 
         // dd($result, $username, $password);
         if ($result->num_rows > 0) {
@@ -34,7 +34,7 @@ class Auth
 
             // setto le variabili di sessione con i dati dell'utente
             $_SESSION['userId'] = $userData['id'];
-            $_SESSION['userName'] = $userData['name_company'];
+            $_SESSION['userName'] = $userData['email'];
 
             // ritorno true se l'utente è autenticato
             return true;

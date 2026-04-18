@@ -3,35 +3,25 @@
 
 // Class Company
 // This class is used to manage the company data and perform operations related to it.
-class Company
+class Utenti
 {
-    public $name_company;
+    public $nome;
+    public $cognome;
     public $password;
-    public $confirm_password;
-    public $vat_number;
-    public $telephone;
-    public $province;
-    public $city;
-    public $address;
-    public $cap;
     public $email;
-    public $birth_of_day;
+    public $confirm_password;
+
+
 
 
     // Constructor to initialize the company object with the provided data
-    public function __construct($name_company, $password, $confirm_password, $vat_number, $telephone, $province, $city, $address, $cap, $email, $birth_of_day)
+    public function __construct($nome, $cognome, $password, $confirm_password, $email)
     {
-        $this->name_company = htmlspecialchars($name_company);
+        $this->nome = htmlspecialchars($nome);
+        $this->cognome = htmlspecialchars($cognome);
         $this->password = htmlspecialchars($password);
         $this->confirm_password = htmlspecialchars($confirm_password);
-        $this->vat_number = htmlspecialchars($vat_number);
-        $this->telephone = htmlspecialchars($telephone);
-        $this->province = htmlspecialchars($province);
-        $this->city = htmlspecialchars($city);
-        $this->address = htmlspecialchars($address);
-        $this->cap = htmlspecialchars($cap);
         $this->email = htmlspecialchars($email);
-        $this->birth_of_day = htmlspecialchars($birth_of_day);
     }
 
     /**
@@ -45,10 +35,10 @@ class Company
         $hashedPassword = md5($this->password);
 
         // Prepare the SQL statement to insert the company data into the database
-        $stmt = $connection->prepare("INSERT INTO companies (name_company, password, vat_number, telephone, email, birth_of_day, address) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt = $connection->prepare("INSERT INTO utenti (nome, cognome, password, email) VALUES (?, ?, ?, ?)");
 
         // Bind the parameters to the SQL statement
-        $stmt->bind_param("sssssss", $this->name_company, $hashedPassword, $this->vat_number, $this->telephone, $this->email, $this->birth_of_day, $this->address);
+        $stmt->bind_param("ssss", $this->nome, $this->cognome, $hashedPassword, $this->email);
 
         // Execute the statement and check for success
         if ($stmt->execute()) {
@@ -70,7 +60,7 @@ class Company
     public static function all($connection)
     {
         // Query to select all records from the company table
-        $query = "SELECT * FROM companies";
+        $query = "SELECT * FROM utenti";
 
         // Execute the query and return the result
         return $connection->query($query);
