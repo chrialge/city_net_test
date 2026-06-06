@@ -85,12 +85,21 @@ class Pokemon
         $query = "SELECT * FROM pokemon INNER JOIN ranghi ON pokemon.idRango = ranghi.id INNER JOIN pokemon_tipologie_pivot ON pokemon.id = pokemon_tipologie_pivot.idPokemon INNER JOIN pokemon_tipologie ON pokemon_tipologie_pivot.idTipologiaPokemon = pokemon_tipologie.id";
 
         // Execute the query and return the result
-        return $connection->query($query);
+        // Execute the query and return an array of rows
+        $result = $connection->query($query);
+        $rows = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
+            }
+            $result->free();
+        }
+        return $rows;
     }
 
     public static function getPokemonById($connection, $id)
     {
-        $sql = "SELECT pokemon.*, ranghi.nome as rangoNome, ranghi.descrizione as rangoDescrizione, ranghi.attributi, ranghi.attributi_sociali, ranghi.puntiConoscenza, ranghi.limiteLivelloConoscenza, ranghi.limitePokemon FROM pokemon LEFT JOIN ranghi ON pokemon.idRango = ranghi.id WHERE pokemon.id = ?";
+        $sql = "SELECT pokemon.*, ranghi.nome as rangoNome, ranghi.descrizione as rangoDescrizione, ranghi.attributi, ranghi.attributiSociali, ranghi.puntiConoscenza, ranghi.limiteLivelloConoscenza, ranghi.limitePokemon FROM pokemon LEFT JOIN ranghi ON pokemon.idRango = ranghi.id WHERE pokemon.id = ?";
 
         if ($statement = $connection->prepare($sql)) {
             $statement->bind_param('i', $id);

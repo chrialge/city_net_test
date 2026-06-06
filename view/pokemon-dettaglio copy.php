@@ -3,9 +3,7 @@
 require_once __DIR__ . '/../assets/controller/pokemon.php';
 require_once __DIR__ . '/../assets/controller/conoscenze.php';
 require_once __DIR__ . '/../assets/controller/categorie_conoscenze.php';
-require_once __DIR__ . '/../assets/controller/ranghi.php';
 require_once __DIR__ . '/../assets/helper/function.php';
-
 
 
 function render_dots(
@@ -49,11 +47,6 @@ $pokemon = $pokemonId ? getPokemonById($pokemonId) : null;
 
 
 $pokemonEvolution = getPokemonChainEvolution($pokemonId);
-$ranghi = getAllRanghi();
-echo '<pre>';
-print_r($ranghi);
-echo '</pre>';
-
 
 
 
@@ -327,48 +320,6 @@ $sheet_config = [
   'skills' => $pokemon_skills,
   'social' => $pokemon_social,
 ];
-
-// Calcolo dei massimali cumulativi in base al Rango attuale del Pokémon
-$max_attributi_cumulati = 0;
-$max_sociali_cumulati = 0;
-$max_conoscenze_cumulati = 0;
-$limite_singola_conoscenza = 1;
-
-$js_rank_config = [];
-
-foreach ($ranghi as $rango) {
-  $key = strtolower($rango['nome']);
-
-  // Accumuliamo i punti fino al rango corrente del Pokémon
-  $max_attributi_cumulati += $rango['attributi'];
-  $max_sociali_cumulati += $rango['attributiSociali'];
-  $max_conoscenze_cumulati = $rango['puntiConoscenza'];
-
-  // Salviamo la configurazione progressiva da passare a JS
-  $js_rank_config[$key] = [
-    'max_attr' => $max_attributi_cumulati,
-    'max_social' => $max_sociali_cumulati,
-    'max_skills' => $max_conoscenze_cumulati,
-    'skill_level_cap' => $rango['limiteLivelloConoscenza']
-  ];
-
-  if ($pokemon_rank === $key) {
-    $limite_singola_conoscenza = $rango['limiteLivelloConoscenza'];
-    break; // Abbiamo raggiunto il rango del Pokémon, fermiamo l'accumulo per il calcolo PHP iniziale
-  }
-}
-
-// Struttura di configurazione aggiornata per JavaScript
-$sheet_config = [
-  'baseHp' => $base_hp,
-  'rank' => $pokemon_rank,
-  'attrs' => $pokemon_attrs,
-  'skills' => $pokemon_skills,
-  'social' => $pokemon_social,
-  'rank_config' => $js_rank_config // Passiamo tutta la struttura cumulata a JS
-];
-
-
 
 
 function pokemon_sprite_url(int $id): string
@@ -1644,13 +1595,19 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
   <script>
     const sheetState = <?php echo json_encode($sheet_config, JSON_UNESCAPED_UNICODE); ?>;
 
+    // 1. Definisci i limiti globali di punti abilità per ciascun rango
+    const RANK_SKILL_LIMITS = {
+      'starter': 5,
+      'beginner': 11,
+      'amateur': 14,
+      'ace': 16,
+      'pro': 17,
+      'master': 18,
+      'champion': 20
+    };
+
     const btnToggleEdit = document.getElementById('btnToggleEdit');
     const editHint = document.getElementById('editHint');
-
-    // Funzioni di utilità per calcolare i punti attualmente spesi sulla scheda
-    function getSpentPoints(group) {
-      return Object.values(sheetState[group]).reduce((sum, val) => sum + val, 0);
-    }
 
     function getLevel(key) {
       if (key in sheetState.attrs) return sheetState.attrs[key];
@@ -1659,83 +1616,43 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
       return 0;
     }
 
-    // Logica di controllo dinamica dei limiti dei Ranghi
-    function setLevel(key, level) {
-      const currentRankData = sheetState.rank_config[sheetState.rank];
-      if (!currentRankData) return false;
+    // Funzione per calcolare quanti punti totali sono stati spesi attualmente nelle conoscenze
+    function getTotalSpentSkills() {
+      return Object.values(sheetState.skills).reduce((sum, value) => sum + value, 0);
+    }
 
-      // --- CASO 1: CONOSCENZE / ABILITÀ ---
-      if (key in sheetState.skills) {
+    // 2. Logica di impostazione del livello con controllo del tetto massimo
+    function setLevel(key, level) {
+      if (key in sheetState.attrs) {
+        // Nota: nel tuo script originale c'era un refuso "sheetState.attrDotsMax", 
+        // qui usiamo il limite massimo della card per sicurezza
+        sheetState.attrs[key] = Math.max(0, level);
+      } else if (key in sheetState.skills) {
         const currentLevel = sheetState.skills[key];
         const diff = level - currentLevel;
 
-        // Controllo limite sul SINGOLO livello della conoscenza (limiteLivelloConoscenza)
-        if (level > currentRankData.skill_level_cap) {
-          alert(`Il livello massimo per una singola Abilità al rango ${sheetState.rank.toUpperCase()} è ${currentRankData.skill_level_cap}!`);
-          return false;
-        }
-
-        // Controllo limite GLOBALE dei punti conoscenza spendibili
+        // Se l'utente sta provando ad aumentare i pallini, controlliamo il limite globale
         if (diff > 0) {
-          const totalSpent = getSpentPoints('skills');
-          if (totalSpent + diff > currentRankData.max_skills) {
-            alert(`Hai esaurito i punti Abilità globali per il rango ${sheetState.rank.toUpperCase()}! (Max: ${currentRankData.max_skills})`);
-            return false;
+          const currentTotal = getTotalSpentSkills();
+          const maxAllowed = RANK_SKILL_LIMITS[sheetState.rank] || 999;
+
+          if (currentTotal + diff > maxAllowed) {
+            // Calcoliamo quanti punti rimangono effettivamente spendibili
+            const remainingPool = maxAllowed - currentTotal;
+            if (remainingPool > 0) {
+              sheetState.skills[key] = currentLevel + remainingPool;
+            } else {
+              alert(`Hai esaurito i punti Abilità per il rango ${sheetState.rank.toUpperCase()}! (Max: ${maxAllowed})`);
+              return false; // Rifiuta l'incremento
+            }
+            return true;
           }
         }
+
         sheetState.skills[key] = Math.max(0, Math.min(5, level));
-      }
-
-      // --- CASO 2: ATTRIBUTI FISICI ---
-      else if (key in sheetState.attrs) {
-        // Escludiamo le chiavi di "limite" dai conteggi se presenti
-        if (key.startsWith('limite')) return false;
-
-        const currentLevel = sheetState.attrs[key];
-        const diff = level - currentLevel;
-
-        if (diff > 0) {
-          const totalSpent = Object.keys(sheetState.attrs)
-            .filter(k => !k.startsWith('limite'))
-            .reduce((sum, k) => sum + sheetState.attrs[k], 0);
-
-          // Calcoliamo i punti base nativi del Pokémon (la somma iniziale degli attributi a Rango Starter)
-          // Nota: Nel tuo DB a Rango Starter gli attributi aggiuntivi sono 0, quindi tutto ciò che eccede la base è un bonus
-          const baseTotal = sheetState.rank_config['starter'] ? 0 : 0; // Gestibile se hai una somma base fissa
-
-          if (totalSpent + diff > currentRankData.max_attr + 10) { // +10 ipotizzando 2 punti base automatici per i 5 attributi
-            alert(`Non hai abbastanza punti Attributo per il rango ${sheetState.rank.toUpperCase()}!`);
-            return false;
-          }
-        }
-
-        // Controllo che non superi il limite massimo specifico della specie (es. massimoVitality)
-        const limitKey = 'limite' + key.charAt(0).toUpperCase() + key.slice(1);
-        const maxLimit = sheetState.attrs[limitKey] || 5;
-        if (level > maxLimit) {
-          alert(`Questo Pokémon non può superare il valore di ${maxLimit} in questo Attributo.`);
-          return false;
-        }
-
-        sheetState.attrs[key] = Math.max(0, level);
-      }
-
-      // --- CASO 3: ATTRIBUTI SOCIALI ---
-      else if (key in sheetState.social) {
-        const currentLevel = sheetState.social[key];
-        const diff = level - currentLevel;
-
-        if (diff > 0) {
-          // Calcola il totale attuale (Sottraiamo 5 perché ogni attributo parte da 1 di base fissa)
-          const totalSpent = getSpentPoints('social') - 5;
-          if (totalSpent + diff > currentRankData.max_social) {
-            alert(`Hai esaurito i punti Sociali aggiuntivi per il rango ${sheetState.rank.toUpperCase()}! (Max Bonus: ${currentRankData.max_social})`);
-            return false;
-          }
-        }
+      } else if (key in sheetState.social) {
         sheetState.social[key] = Math.max(0, Math.min(5, level));
       }
-
       return true;
     }
 
@@ -1750,21 +1667,17 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
         dot.classList.toggle('active', i < level);
       });
 
+      // Aggiorna la barra di aiuto con i punti rimanenti se siamo in modifica
       updateHintText();
     }
 
-    // Aggiorna il testo informativo mostrando i tre tetti di spesa separati
+    // Mostra all'utente quanti punti ha ancora a disposizione in tempo reale
     function updateHintText() {
       if (!document.body.classList.contains('is-editing')) return;
-      const currentRankData = sheetState.rank_config[sheetState.rank];
-      if (!currentRankData) return;
-
-      const spentSkills = getSpentPoints('skills');
-      const spentSocial = getSpentPoints('social') - 5; // Rimuoviamo la base di 1 punto per card
-
-      editHint.innerHTML = `<strong>Rango attuale: ${sheetState.rank.toUpperCase()}</strong><br>` +
-        `Punti Conoscenza spesi: ${spentSkills}/${currentRankData.max_skills} (Limite Singolo: ${currentRankData.skill_level_cap})<br>` +
-        `Punti Sociali extra spesi: ${spentSocial}/${currentRankData.max_social}`;
+      const currentTotal = getTotalSpentSkills();
+      const maxAllowed = RANK_SKILL_LIMITS[sheetState.rank] || 0;
+      const rimasti = maxAllowed - currentTotal;
+      editHint.textContent = `Tocca i pallini per modificare. Punti Abilità spesi: ${currentTotal}/${maxAllowed} (Rimasti: ${rimasti >= 0 ? rimasti : 0}).`;
     }
 
     function recalcCombat() {
@@ -1799,6 +1712,7 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
       setEditMode(!document.body.classList.contains('is-editing'));
     });
 
+    // 3. Listener dei click aggiornato che interrompe l'azione se setLevel fallisce
     document.querySelectorAll('[data-editable-dots]').forEach((wrap) => {
       wrap.addEventListener('click', (e) => {
         if (!document.body.classList.contains('is-editing')) return;
@@ -1810,6 +1724,7 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
         const current = getLevel(key);
         const targetLevel = (current === index) ? index - 1 : index;
 
+        // Esegue setLevel; se restituisce false (limite superato), non aggiorna la UI
         const success = setLevel(key, targetLevel);
 
         if (success !== false) {
@@ -1829,13 +1744,12 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
     if (rankSelect) {
       rankSelect.addEventListener('change', () => {
         sheetState.rank = rankSelect.value;
-        updateHintText();
+        updateHintText(); // Ricalcola il testo dei punti massimi quando cambi rango nel menu a tendina
       });
     }
 
     recalcCombat();
   </script>
-
 </body>
 
 </html>
