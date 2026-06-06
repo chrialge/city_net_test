@@ -161,6 +161,9 @@ function getPokemonDetailFromPokeAPI($nameOrId)
     return [
         'id' => $decoded['id'],
         'name' => $decoded['name'],
-        'img' => $decoded['sprites']['front_default'] ?? null
+        'img' => $decoded['sprites']['front_default'] ?? null,
+        'peso' => $decoded['weight'] ?? null,
+        'altezza' => $decoded['height'] ?? null,
+
     ];
 }

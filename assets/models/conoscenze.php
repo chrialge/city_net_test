@@ -91,8 +91,19 @@ class Conoscenze
      */
     public static function all($connection)
     {
-        // Query to select all records from the company table
-        $query = "SELECT conoscenze.*, GROUP_CONCAT(DISTINCT conoscenze_testi.nome SEPARATOR ', ') AS nomi, conoscenze.nome AS categoriaNome FROM conoscenze INNER JOIN conoscenze_testi ON conoscenze.id = conoscenze_testi.idConoscenza INNER JOIN lingue ON conoscenze_testi.idLingua = lingue.id GROUP BY conoscenze.id";
+        // Costruisce l'ordine dei linguaggi (es. id 1,2,3) e lo usa dentro GROUP_CONCAT
+        $lingue = Lingue::all($connection);
+        if ($lingue && count($lingue) > 0) {
+            $ids = array_map(function ($l) {
+                return intval($l['id']);
+            }, $lingue);
+            $fieldList = implode(',', $ids);
+            $orderInside = " ORDER BY FIELD(conoscenze_testi.idLingua, $fieldList)";
+        } else {
+            $orderInside = " ORDER BY conoscenze_testi.idLingua ASC";
+        }
+
+        $query = "SELECT conoscenze.*, GROUP_CONCAT(DISTINCT conoscenze_testi.nome" . $orderInside . " SEPARATOR '/') AS nomi FROM conoscenze INNER JOIN conoscenze_testi ON conoscenze.id = conoscenze_testi.idConoscenza INNER JOIN lingue ON conoscenze_testi.idLingua = lingue.id GROUP BY conoscenze.id ORDER BY conoscenze.id ASC";
 
         // Execute the query and return an array of rows
         $result = $connection->query($query);

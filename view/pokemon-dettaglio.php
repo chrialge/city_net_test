@@ -3,6 +3,7 @@
 require_once __DIR__ . '/../assets/controller/pokemon.php';
 require_once __DIR__ . '/../assets/controller/conoscenze.php';
 require_once __DIR__ . '/../assets/controller/categorie_conoscenze.php';
+require_once __DIR__ . '/../assets/helper/function.php';
 
 
 function render_dots(
@@ -48,15 +49,212 @@ $conoscenze = getAllConoscenze();
 
 $categorieConoscenze = getAllCategorieConoscenze();
 
-echo '<pre>';
-print_r($categorieConoscenze);
-echo '</pre>';
+// Inizializza array conoscenze in ogni categoria e popola usando riferimento
+foreach ($categorieConoscenze as &$categoria) {
+  $categoria['conoscenze'] = [];
+  foreach ($conoscenze as $conoscenza) {
+    if (isset($conoscenza['idCategoriaConoscenza']) && $categoria['id'] == $conoscenza['idCategoriaConoscenza']) {
+      $categoria['conoscenze'][] = $conoscenza;
+    }
+  }
+}
+unset($categoria);
 
-echo '<pre>';
-print_r($conoscenze);
-echo '</pre>';
-die();
+function safe_color(string $color): string
+{
+  $color = trim($color);
+  if ($color === '') {
+    return '';
+  }
+  if (preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $color)) {
+    return $color;
+  }
+  if (preg_match('/^(rgb|rgba|hsl|hsla)\(/i', $color)) {
+    return $color;
+  }
+  return '';
+}
 
+function hex_to_rgb(string $hex): ?array
+{
+  $hex = ltrim($hex, '#');
+  if (strlen($hex) === 3) {
+    $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+  }
+  if (strlen($hex) !== 6) {
+    return null;
+  }
+  return [
+    hexdec(substr($hex, 0, 2)),
+    hexdec(substr($hex, 2, 2)),
+    hexdec(substr($hex, 4, 2)),
+  ];
+}
+
+function is_dark_color(string $color): bool
+{
+  $rgb = hex_to_rgb($color);
+  if ($rgb === null) {
+    return false;
+  }
+  [$r, $g, $b] = $rgb;
+  $luminance = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
+  return $luminance < 0.55;
+}
+
+function type_colors(array $type): array
+{
+  $candidates = [
+    'colorePrimario',
+    'colorePrincipale',
+    'coloreSecondario',
+    'coloreSecondario',
+    'coloreTerzario',
+    'coloreTerziario',
+  ];
+
+  $colors = [];
+  foreach ($candidates as $key) {
+    if (!isset($type[$key])) {
+      continue;
+    }
+    $color = safe_color((string) $type[$key]);
+    if ($color === '') {
+      continue;
+    }
+    if (!in_array($color, $colors, true)) {
+      $colors[] = $color;
+    }
+  }
+  return $colors;
+}
+
+function type_palette(array $types): array
+{
+  $colors = [];
+  $explicitText = '';
+  foreach ($types as $type) {
+    $typeColors = type_colors($type);
+    $added = 0;
+    foreach ($typeColors as $color) {
+      if (!in_array($color, $colors, true)) {
+        $colors[] = $color;
+        $added++;
+      }
+    }
+    // Se questa tipologia ha effettivamente contribuito colori, cerca un coloreTesto
+    if ($added > 0 && $explicitText === '') {
+      foreach (['coloreTesto', 'colore_testo', 'colore_text', 'colore_texto', 'textColor', 'text_color'] as $txtKey) {
+        if (isset($type[$txtKey])) {
+          $c = safe_color((string) $type[$txtKey]);
+          if ($c !== '') {
+            $explicitText = $c;
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  if (count($colors) === 0) {
+    return [
+      'bg' => '#fefce8',
+      'bg_deep' => '#fef08a',
+      'accent' => '#eab308',
+      'accent_dark' => '#a16207',
+      'text' => '#422006',
+    ];
+  }
+
+  $primary = $colors[0];
+  $secondary = $colors[1] ?? $primary;
+  $tertiary = $colors[2] ?? $secondary;
+  $accent = $tertiary;
+  // Se è stato fornito esplicitamente un colore testo (solo da tipologie con colori), usalo come priorità
+  $text = $explicitText !== '' ? $explicitText : (is_dark_color($primary) ? '#ffffff' : '#111827');
+  $accent_foreground = $accentExplicit !== '' ? $accentExplicit : (is_dark_color($accent) ? '#ffffff' : '#111827');
+
+  return [
+    'bg' => $primary,
+    'bg_deep' => $secondary,
+    'accent' => $accent,
+    'accent_dark' => is_dark_color($accent) ? '#ffffff' : '#1f2937',
+    'accent_foreground' => $accent_foreground,
+    'text' => $text,
+  ];
+}
+
+function header_style_for_types(array $types): string
+{
+  $colors = [];
+  foreach ($types as $type) {
+    $typeColors = type_colors($type);
+    if (count($types) === 1) {
+      // per un solo tipo usiamo tutti i suoi colori disponibili
+      $colors = array_merge($colors, $typeColors);
+      break;
+    }
+    if (!empty($typeColors)) {
+      $colors[] = $typeColors[0];
+    }
+  }
+
+  $colors = array_values(array_unique(array_filter($colors)));
+  if (count($colors) === 0) {
+    return '';
+  }
+  if (count($colors) === 1) {
+    $textColor = is_dark_color($colors[0]) ? '#ffffff' : '#111827';
+    return sprintf('background: %s; color: %s;', $colors[0], $textColor);
+  }
+
+  $textColor = is_dark_color($colors[0]) ? '#ffffff' : '#111827';
+  $stops = [];
+  $step = 100 / (count($colors) - 1);
+  foreach ($colors as $index => $color) {
+    $stops[] = sprintf('%s %d%%', $color, (int) round($index * $step));
+  }
+
+  return sprintf('background: linear-gradient(135deg, %s); color: %s;', implode(', ', $stops), $textColor);
+}
+
+function badge_style_for_type(array $type): string
+{
+  $colors = type_colors($type);
+  if (count($colors) === 0) {
+    return '';
+  }
+  $background = count($colors) === 1
+    ? $colors[0]
+    : sprintf('linear-gradient(135deg, %s)', implode(', ', $colors));
+  // Preferenza per campo coloreTesto nella singola tipologia
+  $textColor = '';
+  foreach (['coloreTesto', 'colore_testo', 'colore_text', 'colore_texto', 'textColor', 'text_color'] as $txtKey) {
+    if (isset($type[$txtKey])) {
+      $c = safe_color((string) $type[$txtKey]);
+      if ($c !== '') {
+        $textColor = $c;
+        break;
+      }
+    }
+  }
+  if ($textColor === '') {
+    $textColor = is_dark_color($colors[0]) ? '#ffffff' : '#111827';
+  }
+  return sprintf('background: %s; color: %s; border-color: rgba(0,0,0,0.08);', $background, $textColor);
+}
+
+$heroStyle = header_style_for_types($pokemon['tipologie']);
+$typePalette = type_palette($pokemon['tipologie']);
+$bodyStyle = sprintf(
+  '--type-bg:%s; --type-bg-deep:%s; --type-accent:%s; --type-accent-dark:%s; --type-accent-foreground:%s; --type-text:%s;',
+  $typePalette['bg'],
+  $typePalette['bg_deep'],
+  $typePalette['accent'],
+  $typePalette['accent_dark'],
+  $typePalette['accent_foreground'],
+  $typePalette['text']
+);
 
 // Limite pallini attributi combattimento (varia per specie — da DB)
 $attr_dots_max = 12;
@@ -75,20 +273,15 @@ $pokemon_attrs = [
   'limiteInsight' => intval($pokemon['massimoInsight']),
 ];
 
-$pokemon_skills = [
-  'brawl' => 0,
-  'channel' => 0,
-  'clash' => 0,
-  'evasion' => 0,
-  'alert' => 0,
-  'athletic' => 0,
-  'nature' => 0,
-  'stealth' => 0,
-  'allure' => 0,
-  'etiquette' => 0,
-  'intimidate' => 0,
-  'perform' => 0,
-];
+$pokemon_skills = [];
+
+foreach ($conoscenze as $conoscenza) {
+  $key = strtolower($conoscenza['nome']);
+  $pokemon_skills[$key] = 0;
+}
+
+// Se chiamiamo render_dots su una skill non inizializzata, usiamo 0 come default.
+
 
 $pokemon_social = [
   'tough' => 1,
@@ -131,6 +324,9 @@ function pokemon_sprite_url(int $id): string
   return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/'
     . $id . '.png';
 }
+
+$pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
+
 ?>
 <!DOCTYPE html>
 <html lang="it">
@@ -162,8 +358,8 @@ function pokemon_sprite_url(int $id): string
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: #fffbeb;
-      color: #1f2937;
+      background: linear-gradient(180deg, var(--type-bg, #fefce8) 0%, #fffbeb 45%, #ffffff 100%);
+      color: var(--type-text, #1f2937);
     }
 
     .app {
@@ -172,7 +368,7 @@ function pokemon_sprite_url(int $id): string
       margin: 0 auto;
       min-height: 100vh;
       min-height: 100dvh;
-      background: #ffffff;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.9));
       display: flex;
       flex-direction: column;
     }
@@ -226,11 +422,12 @@ function pokemon_sprite_url(int $id): string
       letter-spacing: 0.06em;
     }
 
+
     .hero-center h1 {
       margin: 0 0 12px;
       font-size: clamp(2rem, 9vw, 2.75rem);
       line-height: 1.05;
-      color: #111827;
+      color: var(--type-text, #111827);
     }
 
     .type-list {
@@ -280,7 +477,7 @@ function pokemon_sprite_url(int $id): string
       margin: 10px 0 0;
       font-size: 13px;
       line-height: 1.45;
-      color: #78350f;
+      color: var(--type-text, #78350f);
       text-align: center;
     }
 
@@ -294,8 +491,8 @@ function pokemon_sprite_url(int $id): string
     }
 
     .btn.is-active {
-      background: #422006;
-      color: #fef08a;
+      background: var(--type-accent-dark);
+      color: var(--type-text);
     }
 
     .type-fire {
@@ -327,7 +524,7 @@ function pokemon_sprite_url(int $id): string
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: var(--type-accent-dark);
+      color: var(--type-text, var(--type-accent-dark));
     }
 
     .rank-select {
@@ -807,10 +1004,11 @@ function pokemon_sprite_url(int $id): string
 
     .skill-item {
       display: flex;
-      flex-direction: column;
+      flex-direction: row;
       align-items: center;
-      gap: 8px;
-      padding: 10px 8px 12px;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
       background: #f9fafb;
       border-radius: 10px;
       min-height: calc(var(--dots-track-h) + 2rem + 14px);
@@ -821,16 +1019,41 @@ function pokemon_sprite_url(int $id): string
     }
 
     .skill-name {
-      width: 100%;
+      flex: 1 1 auto;
       font-size: 13px;
       font-weight: bold;
       color: #374151;
       text-transform: capitalize;
       line-height: 1.2;
-      text-align: center;
+      text-align: left;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
+      padding-right: 8px;
+    }
+
+    .skill-row {
+      flex-direction: column;
+      display: flex;
+      align-items: center;
+      width: 100%;
+      gap: 12px;
+    }
+
+    .skill-dots {
+      flex: 0 0 auto;
+    }
+
+    @media (max-width: 600px) {
+      .skill-item {
+        flex-direction: column;
+        align-items: center;
+      }
+
+      .skill-name {
+        text-align: center;
+        padding-right: 0;
+      }
     }
 
     .skill-group-extra.is-empty {
@@ -892,12 +1115,12 @@ function pokemon_sprite_url(int $id): string
 
     .btn-primary {
       background: var(--type-accent);
-      color: #1f2937;
+      color: var(--type-text, #1f2937);
     }
 
     .btn-light {
       background: var(--type-bg);
-      color: var(--type-accent-dark);
+      color: var(--type-text, var(--type-accent-dark));
       border: 1px solid var(--type-bg-deep);
     }
 
@@ -1064,26 +1287,22 @@ function pokemon_sprite_url(int $id): string
   </style>
 </head>
 
-<body>
+<body style="<?= htmlspecialchars($bodyStyle, ENT_QUOTES, 'UTF-8'); ?>">
 
   <main class="app">
 
-    <header class="detail-header type-electric">
-      <div class="header-top">
-        <a href="pokemon.php" class="back-link">← Torna al Dex</a>
-      </div>
-
+    <header class="detail-header" style="<?= htmlspecialchars($heroStyle, ENT_QUOTES, 'UTF-8'); ?>">
       <div class="hero-center">
         <img
           class="hero-image"
-          src="https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/25.png"
-          alt="Pikachu">
-        <p class="pokemon-number"><?= $pokemon['numeroPokemon'] ?></p>
-        <h1><?= $pokemon['nome'] ?></h1>
+          src="<?= $pokemonApi['img'] ?? '' ?>"
+          alt="Immagine ufficiale di <?= htmlspecialchars($pokemon['nome'], ENT_QUOTES, 'UTF-8') ?>">
+        <p class="pokemon-number"><?= $pokemon['numeroPokedex'] ?></p>
+        <h1><?= htmlspecialchars($pokemon['nome'], ENT_QUOTES, 'UTF-8') ?></h1>
         <div class="type-list">
           <?php foreach ($pokemon['tipologie'] as $type): ?>
-            <span class="type" style="background-color: var(--type-<?= htmlspecialchars($type, ENT_QUOTES, 'UTF-8'); ?>); color: var(--type-text); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);">
-              <?= htmlspecialchars(ucfirst($type), ENT_QUOTES, 'UTF-8'); ?>
+            <span class="type" style="<?= htmlspecialchars(badge_style_for_type($type), ENT_QUOTES, 'UTF-8'); ?>">
+              <?= htmlspecialchars($type['nome'], ENT_QUOTES, 'UTF-8') ?>
             </span>
           <?php endforeach; ?>
         </div>
@@ -1113,25 +1332,24 @@ function pokemon_sprite_url(int $id): string
           <section class="panel profile-dati">
             <div class="panel-title">
               <h2>Dati base</h2>
-              <span class="panel-badge">PokéAPI · PokéRole</span>
             </div>
 
             <div class="data-grid">
               <div class="data-item full">
                 <strong>Abilità specie</strong>
                 <span><?php foreach ($pokemon['abilita'] as $ability): ?>
-                    <?= htmlspecialchars(ucfirst($ability), ENT_QUOTES, 'UTF-8'); ?>
+                    <?= $ability['nomeItaliano'] ?>
                   <?php endforeach; ?></span>
               </div>
 
               <div class="data-item">
                 <strong>Altezza</strong>
-                <span>0.4 m</span>
+                <span><?= number_format(($pokemonApi['altezza'] ?? 0) / 10, 1, '.', '') ?> m</span>
               </div>
 
               <div class="data-item">
                 <strong>Peso</strong>
-                <span>6 kg</span>
+                <span><?= $pokemonApi['peso'] ?? '6 kg' ?></span>
               </div>
 
               <div class="data-item">
@@ -1144,22 +1362,18 @@ function pokemon_sprite_url(int $id): string
           <div class="profile-side">
             <section class="panel profile-desc">
               <div class="panel-title">
-                <h2>Descrizione GDR</h2>
-                <span class="panel-badge">Note</span>
+                <h2>Descrizione</h2>
+
               </div>
 
               <p class="notes">
-                Vive in piccoli gruppi nelle foreste e tende a restare nascosto.
-                Accumula elettricità nelle sacche sulle guance e usa la coda per
-                scaricare l’energia in eccesso. Può essere testardo e diffidente
-                verso gli sconosciuti.
+                <?php echo nl2br(htmlspecialchars($pokemon['descrizioni'], ENT_QUOTES, 'UTF-8')); ?>
               </p>
             </section>
 
             <section class="panel profile-weakness">
               <div class="panel-title">
                 <h2>Debolezze</h2>
-                <span class="panel-badge">Tipo</span>
               </div>
 
               <div class="weakness-list">
@@ -1181,120 +1395,42 @@ function pokemon_sprite_url(int $id): string
         <section class="panel panel-wide" id="sectionAbilita">
           <div class="panel-title">
             <h2>Abilità</h2>
-            <span class="panel-badge">PokéRole</span>
+
           </div>
 
           <div class="skill-groups">
 
-            <div class="skill-group">
-              <?php foreach ($categorieConoscenze as $categoria): ?>
-                <?php if($categoria['visibilePokemon'] ==1): ?>
-                                <h3 class="skill-group-title"><?php echo htmlspecialchars($categoria['nome'], ENT_QUOTES, 'UTF-8'); ?></h3>
-              <div class="skill-list">
-                <?php foreach($conoscenza as $conoscenza) ?>
-                <?php if($conoscenza[''])
-                <div class="skill-item">
-                  <span class="skill-name">Brawl</span>
-                  <?php echo render_dots($pokemon_skills['brawl'], 5, true, null, 'brawl'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Channel</span>
-                  <?php echo render_dots($pokemon_skills['channel'], 5, true, null, 'channel'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Clash</span>
-                  <?php echo render_dots($pokemon_skills['clash'], 5, true, null, 'clash'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Evasion</span>
-                  <?php echo render_dots($pokemon_skills['evasion'], 5, true, null, 'evasion'); ?>
-                </div>
-              </div>
-                  <?php endif; ?>
-              <?php endforeach; ?>
-                  
-                
+            <?php foreach ($categorieConoscenze as $categoria): ?>
+              <?php if ($categoria['visibilePokemon'] == 1 && count($categoria['conoscenze']) > 0): ?>
+                <div class="skill-group">
+                  <h3 class="skill-group-title"><?php echo htmlspecialchars($categoria['nome'], ENT_QUOTES, 'UTF-8'); ?></h3>
+                  <div class="skill-list">
+                    <?php foreach ($categoria['conoscenze'] as $conoscenza): ?>
 
-              <h3 class="skill-group-title">Fight</h3>
-              <div class="skill-list">
-                <div class="skill-item">
-                  <span class="skill-name">Brawl</span>
-                  <?php echo render_dots($pokemon_skills['brawl'], 5, true, null, 'brawl'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Channel</span>
-                  <?php echo render_dots($pokemon_skills['channel'], 5, true, null, 'channel'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Clash</span>
-                  <?php echo render_dots($pokemon_skills['clash'], 5, true, null, 'clash'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Evasion</span>
-                  <?php echo render_dots($pokemon_skills['evasion'], 5, true, null, 'evasion'); ?>
-                </div>
-              </div>
-            </div>
+                      <?php if ($conoscenza['visibilePokemon'] == 1): ?>
+                        <div class="skill-item">
 
-            <div class="skill-group">
-              <h3 class="skill-group-title">Survival</h3>
-              <div class="skill-list">
-                <div class="skill-item">
-                  <span class="skill-name">Alert</span>
-                  <?php echo render_dots($pokemon_skills['alert'], 5, true, null, 'alert'); ?>
+                          <div class="skill-row">
+                            <span class="skill-name"><?php echo $conoscenza['nomi'] ?></span>
+                            <div class="skill-dots"><?php echo render_dots($pokemon_skills[strtolower($conoscenza['nome'])] ?? 0, 5, true, null, strtolower($conoscenza['nome'])); ?></div>
+                          </div>
+                        </div>
+                      <?php endif; ?>
+                    <?php endforeach; ?>
+                  </div>
                 </div>
-                <div class="skill-item">
-                  <span class="skill-name">Athletic</span>
-                  <?php echo render_dots($pokemon_skills['athletic'], 5, true, null, 'athletic'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Nature</span>
-                  <?php echo render_dots($pokemon_skills['nature'], 5, true, null, 'nature'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Stealth</span>
-                  <?php echo render_dots($pokemon_skills['stealth'], 5, true, null, 'stealth'); ?>
-                </div>
-              </div>
-            </div>
+              <?php endif; ?>
+            <?php endforeach; ?>
 
-            <div class="skill-group">
-              <h3 class="skill-group-title">Social</h3>
-              <div class="skill-list">
-                <div class="skill-item">
-                  <span class="skill-name">Allure</span>
-                  <?php echo render_dots($pokemon_skills['allure'], 5, true, null, 'allure'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Etiquette</span>
-                  <?php echo render_dots($pokemon_skills['etiquette'], 5, true, null, 'etiquette'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Intimidate</span>
-                  <?php echo render_dots($pokemon_skills['intimidate'], 5, true, null, 'intimidate'); ?>
-                </div>
-                <div class="skill-item">
-                  <span class="skill-name">Perform</span>
-                  <?php echo render_dots($pokemon_skills['perform'], 5, true, null, 'perform'); ?>
-                </div>
-              </div>
-            </div>
-
-            <!-- Rimuovere la classe is-empty se ci sono abilità extra -->
-            <div class="skill-group skill-group-extra is-empty">
-              <h3 class="skill-group-title">Extra</h3>
-              <div class="skill-list">
-                <!-- es. <div class="skill-item">...</div> -->
-              </div>
-            </div>
 
           </div>
+
         </section>
 
         <section class="panel panel-wide" id="sectionAttributi">
           <div class="panel-title">
             <h2>Attributi</h2>
-            <span class="panel-badge">Base · Sociali</span>
+
           </div>
 
           <div class="attrs-layout">
@@ -1357,7 +1493,6 @@ function pokemon_sprite_url(int $id): string
         <section class="panel panel-wide" id="sectionCombattimento">
           <div class="panel-title">
             <h2>Combattimento</h2>
-            <span class="panel-badge">Calcolato</span>
           </div>
 
           <div class="combat-grid">
@@ -1414,7 +1549,7 @@ function pokemon_sprite_url(int $id): string
         <section class="panel panel-wide" id="sectionEvoluzioni">
           <div class="panel-title">
             <h2>Evoluzioni</h2>
-            <span class="panel-badge">Catena</span>
+
           </div>
 
           <div class="evo-chain">
@@ -1451,7 +1586,7 @@ function pokemon_sprite_url(int $id): string
     </div>
 
     <nav class="bottom-nav">
-      <a href="pokemon.php">Dex</a>
+      <a href="../pokedex.php">Dex</a>
       <a href="#sectionEvoluzioni">Evoluzioni</a>
       <a href="#">Team</a>
     </nav>

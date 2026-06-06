@@ -61,8 +61,16 @@ class Lingue
         // Query to select all records from the company table
         $query = "SELECT * FROM lingue";
 
-        // Execute the query and return the result
-        return $connection->query($query);
+        // Execute the query and return an array of rows
+        $result = $connection->query($query);
+        $rows = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
+            }
+            $result->free();
+        }
+        return $rows;
     }
 
     public static function getLingueById($connection, $id)
