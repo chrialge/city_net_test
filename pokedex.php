@@ -92,7 +92,7 @@ die();*/
     <main class="app">
 
         <section class="topbar">
-            <h1>PokéRole Dex</h1>
+            <h1>PokéRole - Dex</h1>
             <form method="get" action="./pokedex.php">
                 <input class="search-box" type="search" id="searchInput" name="q" value="<?= htmlspecialchars($searchQuery) ?>" placeholder="Cerca Pokémon..." autocomplete="off" aria-label="Cerca Pokémon">
             </form>
@@ -145,9 +145,9 @@ die();*/
         </div>
 
         <nav class="bottom-nav">
-            <a href="#" class="active">Dex</a>
-            <a href="#">Nature</a>
-            <a href="#">Team</a>
+            <a href="view/pokedex.php" class="active">Dex</a>
+            <a href="view/nature.php">Nature</a>
+            <a href="view/team.php">Team</a>
         </nav>
 
     </main>

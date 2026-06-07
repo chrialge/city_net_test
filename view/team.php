@@ -1,0 +1,749 @@
+<?php
+
+session_start();
+
+echo "<pre>";
+print_r($_SESSION);
+echo "</pre>";
+
+$allenatoreId = $_SESSION['allenatoreId'] ?? 0;
+?>
+
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PokéRole Dex - Team</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6fa;
+      color: #1f2937;
+    }
+
+    .app {
+      width: 100%;
+      max-width: 100%;
+      margin: 0 auto;
+      min-height: 100vh;
+      min-height: 100dvh;
+      background: #ffffff;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: #ef4444;
+      color: white;
+      padding: 14px 16px 16px;
+      border-bottom-left-radius: 22px;
+      border-bottom-right-radius: 22px;
+      box-shadow: 0 4px 20px rgba(239, 68, 68, 0.25);
+    }
+
+    .topbar h1 {
+      margin: 0 0 6px;
+      font-size: clamp(1.25rem, 4vw, 1.75rem);
+    }
+
+    .topbar-subtitle {
+      margin: 0;
+      font-size: 13px;
+      line-height: 1.35;
+      opacity: 0.9;
+    }
+
+    .main-scroll {
+      flex: 1;
+      padding: 12px 12px calc(16px + env(safe-area-inset-bottom, 0));
+    }
+
+    .screen {
+      display: none;
+    }
+
+    .screen.active {
+      display: block;
+    }
+
+    .login-card,
+    .profile-card,
+    .team-card,
+    .empty-team {
+      border-radius: 20px;
+      background: #f9fafb;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.07);
+    }
+
+    .login-card {
+      padding: 18px;
+      margin-top: 10px;
+    }
+
+    .login-title {
+      margin: 0 0 6px;
+      font-size: 21px;
+      color: #111827;
+    }
+
+    .login-text {
+      margin: 0 0 18px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: #6b7280;
+    }
+
+    .form-group {
+      margin-bottom: 12px;
+    }
+
+    .form-label {
+      display: block;
+      margin-bottom: 6px;
+      font-size: 12px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #ef4444;
+    }
+
+    .form-control {
+      width: 100%;
+      border: 1px solid #e5e7eb;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 16px;
+      color: #111827;
+      outline: none;
+      background: white;
+      -webkit-appearance: none;
+    }
+
+    .form-control:focus {
+      border-color: #ef4444;
+      box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12);
+    }
+
+    .primary-btn,
+    .ghost-btn,
+    .danger-btn {
+      width: 100%;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 15px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.1s, opacity 0.15s, background 0.15s;
+    }
+
+    .primary-btn:hover,
+    .ghost-btn:hover,
+    .danger-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .primary-btn {
+      margin-top: 4px;
+      background: #ef4444;
+      color: white;
+      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.25);
+    }
+
+    .ghost-btn {
+      background: white;
+      color: #ef4444;
+      border: 1px solid #fee2e2;
+    }
+
+    .danger-btn {
+      width: auto;
+      padding: 9px 12px;
+      font-size: 13px;
+      background: #fee2e2;
+      color: #dc2626;
+    }
+
+    .hint-box {
+      margin-top: 14px;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      font-size: 12px;
+      line-height: 1.4;
+      color: #6b7280;
+    }
+
+    .profile-card {
+      padding: 14px;
+      margin-bottom: 12px;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .avatar {
+      flex: 0 0 auto;
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #ef4444;
+      color: white;
+      font-size: 22px;
+      font-weight: bold;
+      box-shadow: 0 4px 10px rgba(239, 68, 68, 0.24);
+    }
+
+    .profile-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .profile-name {
+      margin: 0;
+      font-size: 18px;
+      color: #111827;
+      line-height: 1.2;
+    }
+
+    .profile-role {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: #6b7280;
+    }
+
+    .profile-actions {
+      margin-top: 12px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 12px;
+    }
+
+    .stat-box {
+      border-radius: 14px;
+      padding: 10px 8px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      text-align: center;
+    }
+
+    .stat-value {
+      display: block;
+      font-size: 18px;
+      font-weight: bold;
+      color: #ef4444;
+    }
+
+    .stat-label {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      color: #6b7280;
+    }
+
+    .section-title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin: 16px 2px 10px;
+    }
+
+    .section-title {
+      margin: 0;
+      font-size: 17px;
+      color: #111827;
+    }
+
+    .team-counter {
+      flex: 0 0 auto;
+      font-size: 12px;
+      font-weight: bold;
+      color: #ef4444;
+      background: #fee2e2;
+      border-radius: 999px;
+      padding: 6px 10px;
+    }
+
+    .team-list {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 10px;
+    }
+
+    .team-card {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px;
+      min-width: 0;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+
+    .team-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .pokemon-sprite {
+      flex: 0 0 auto;
+      width: 58px;
+      height: 58px;
+      border-radius: 18px;
+      background: white;
+      border: 1px solid #e5e7eb;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 28px;
+    }
+
+    .pokemon-info {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .pokemon-name-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 5px;
+    }
+
+    .pokemon-name {
+      margin: 0;
+      font-size: 16px;
+      color: #111827;
+      line-height: 1.2;
+    }
+
+    .pokemon-number {
+      font-size: 12px;
+      color: #9ca3af;
+      font-weight: bold;
+    }
+
+    .pokemon-meta {
+      margin: 0;
+      font-size: 12px;
+      color: #6b7280;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .type-tags {
+      display: flex;
+      gap: 5px;
+      flex-wrap: wrap;
+      margin-top: 7px;
+    }
+
+    .type-tag {
+      display: inline-flex;
+      align-items: center;
+      border-radius: 999px;
+      padding: 4px 8px;
+      font-size: 11px;
+      font-weight: bold;
+      color: #ef4444;
+      background: #fee2e2;
+    }
+
+    .remove-btn {
+      flex: 0 0 auto;
+      width: 36px;
+      height: 36px;
+      border: none;
+      border-radius: 999px;
+      background: #fee2e2;
+      color: #dc2626;
+      font-size: 20px;
+      line-height: 1;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .empty-team {
+      display: none;
+      text-align: center;
+      padding: 32px 18px;
+      color: #6b7280;
+      font-size: 14px;
+      line-height: 1.45;
+    }
+
+    .empty-team.visible {
+      display: block;
+    }
+
+    .bottom-nav {
+      position: sticky;
+      bottom: 0;
+      z-index: 10;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      background: white;
+      border-top: 1px solid #e5e7eb;
+      padding-bottom: env(safe-area-inset-bottom, 0);
+    }
+
+    .bottom-nav a {
+      padding: 14px 6px;
+      text-align: center;
+      text-decoration: none;
+      color: #6b7280;
+      font-size: 13px;
+    }
+
+    .bottom-nav a.active {
+      color: #ef4444;
+      font-weight: bold;
+    }
+
+    @media (min-width: 380px) {
+      .main-scroll {
+        padding: 14px 14px calc(18px + env(safe-area-inset-bottom, 0));
+      }
+
+      .pokemon-sprite {
+        width: 64px;
+        height: 64px;
+      }
+    }
+
+    @media (min-width: 600px) {
+      .app {
+        max-width: 720px;
+        box-shadow: 0 0 40px rgba(0, 0, 0, 0.06);
+      }
+
+      .topbar {
+        padding: 18px 24px 20px;
+        border-bottom-left-radius: 28px;
+        border-bottom-right-radius: 28px;
+      }
+
+      .main-scroll {
+        padding: 20px 24px calc(24px + env(safe-area-inset-bottom, 0));
+      }
+
+      .login-card,
+      .profile-card {
+        padding: 20px;
+      }
+
+      .team-list {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+      }
+
+      .team-card {
+        align-items: flex-start;
+      }
+    }
+
+    @media (min-width: 1024px) {
+      body {
+        padding: 24px 16px;
+      }
+
+      .app {
+        max-width: 1100px;
+        border-radius: 24px;
+        overflow: hidden;
+        min-height: calc(100vh - 48px);
+      }
+
+      .main-scroll {
+        padding: 24px 28px 28px;
+      }
+
+      .team-list {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+      }
+
+      .bottom-nav {
+        max-width: 1100px;
+        margin: 0 auto;
+        border-radius: 0 0 24px 24px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <main class="app">
+
+    <section class="topbar">
+      <h1>Pokèrole - Team</h1>
+      <p class="topbar-subtitle">Accedi al tuo profilo, consulta la squadra e rimuovi i Pokémon che non vuoi più nel team.</p>
+    </section>
+
+    <div class="main-scroll">
+
+      <section class="screen <?= $allenatoreId != 0 ? "" : "active" ?>" id="loginScreen" aria-label="Accesso profilo">
+        <article class="login-card">
+          <h2 class="login-title">Accedi al profilo</h2>
+          <p class="login-text">Inserisci il nome allenatore per visualizzare il tuo team. Questa versione è pronta per essere collegata a PHP/MySQL.</p>
+
+          <form action="../assets/controller/allenatore.php" id="loginForm" method="POST">
+            <div class="form-group">
+              <label class="form-label" for="nomeAllenatore">Nome allenatore</label>
+              <input class="form-control" type="text" id="trainerName" name="nomeAllenatore" placeholder="Es. Ash" autocomplete="name" required>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="codiceProfilo">Codice profilo</label>
+              <input class="form-control" type="password" id="trainerCode" name="codiceProfilo" placeholder="Codice o password" autocomplete="current-password">
+            </div>
+
+            <button class="primary-btn" type="submit">Entra nel team</button>
+          </form>
+
+          <div class="hint-box">
+            Per ora il login è dimostrativo: dopo l'accesso vengono mostrati Pokémon di esempio. Nel database potrai sostituirli con quelli collegati all'utente.
+          </div>
+        </article>
+      </section>
+
+      <section class="screen <?= $allenatoreId > 0 ? "active" : "" ?>" id="profileScreen" aria-label="Profilo e team">
+        <article class="profile-card">
+          <div class="profile-header">
+            <div class="avatar" id="trainerAvatar">A</div>
+            <div class="profile-info">
+              <h2 class="profile-name" id="profileName">Allenatore</h2>
+              <p class="profile-role">Profilo allenatore Pokémon</p>
+            </div>
+          </div>
+
+          <div class="stats-row">
+            <div class="stat-box">
+              <span class="stat-value" id="teamCount">0</span>
+              <span class="stat-label">Team</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-value">6</span>
+              <span class="stat-label">Max slot</span>
+            </div>
+            <div class="stat-box">
+              <span class="stat-value" id="freeSlots">6</span>
+              <span class="stat-label">Liberi</span>
+            </div>
+          </div>
+
+          <div class="profile-actions">
+            <button class="ghost-btn" type="button" id="addDemoBtn">Aggiungi demo</button>
+            <button class="ghost-btn" type="button" id="logoutBtn">Esci</button>
+          </div>
+        </article>
+
+        <div class="section-title-row">
+          <h2 class="section-title">Pokémon nel team</h2>
+          <span class="team-counter" id="teamCounter">0 / 6</span>
+        </div>
+
+        <section class="team-list" id="teamList">
+          <article class="team-card" data-id="25">
+            <div class="pokemon-sprite" aria-hidden="true">⚡</div>
+            <div class="pokemon-info">
+              <div class="pokemon-name-row">
+                <h3 class="pokemon-name">Pikachu</h3>
+                <span class="pokemon-number">#025</span>
+              </div>
+              <p class="pokemon-meta">Lv. 12 · Maschio</p>
+              <div class="type-tags">
+                <span class="type-tag">Elettro</span>
+              </div>
+            </div>
+            <button class="remove-btn" type="button" aria-label="Rimuovi Pikachu dal team">×</button>
+          </article>
+
+          <article class="team-card" data-id="1">
+            <div class="pokemon-sprite" aria-hidden="true">🌱</div>
+            <div class="pokemon-info">
+              <div class="pokemon-name-row">
+                <h3 class="pokemon-name">Bulbasaur</h3>
+                <span class="pokemon-number">#001</span>
+              </div>
+              <p class="pokemon-meta">Lv. 10 · Femmina</p>
+              <div class="type-tags">
+                <span class="type-tag">Erba</span>
+                <span class="type-tag">Veleno</span>
+              </div>
+            </div>
+            <button class="remove-btn" type="button" aria-label="Rimuovi Bulbasaur dal team">×</button>
+          </article>
+
+          <article class="team-card" data-id="4">
+            <div class="pokemon-sprite" aria-hidden="true">🔥</div>
+            <div class="pokemon-info">
+              <div class="pokemon-name-row">
+                <h3 class="pokemon-name">Charmander</h3>
+                <span class="pokemon-number">#004</span>
+              </div>
+              <p class="pokemon-meta">Lv. 11 · Maschio</p>
+              <div class="type-tags">
+                <span class="type-tag">Fuoco</span>
+              </div>
+            </div>
+            <button class="remove-btn" type="button" aria-label="Rimuovi Charmander dal team">×</button>
+          </article>
+        </section>
+
+        <div class="empty-team" id="emptyTeam">
+          Il tuo team è vuoto. Puoi aggiungere Pokémon dal Pokédex oppure collegare questa pagina alla tabella del database.
+        </div>
+      </section>
+
+    </div>
+
+    <nav class="bottom-nav">
+      <a href="../pokedex.php">Dex</a>
+      <a href="nature.php">Nature</a>
+      <a href="team.php" class="active">Team</a>
+    </nav>
+
+  </main>
+
+  <script>
+    (function() {
+      var loginScreen = document.getElementById('loginScreen');
+      var profileScreen = document.getElementById('profileScreen');
+      var loginForm = document.getElementById('loginForm');
+      var trainerName = document.getElementById('trainerName');
+      var profileName = document.getElementById('profileName');
+      var trainerAvatar = document.getElementById('trainerAvatar');
+      var teamList = document.getElementById('teamList');
+      var teamCount = document.getElementById('teamCount');
+      var freeSlots = document.getElementById('freeSlots');
+      var teamCounter = document.getElementById('teamCounter');
+      var emptyTeam = document.getElementById('emptyTeam');
+      var logoutBtn = document.getElementById('logoutBtn');
+      var addDemoBtn = document.getElementById('addDemoBtn');
+      var maxTeamSize = 6;
+
+      var demoPokemon = [{
+          id: 7,
+          icon: '💧',
+          name: 'Squirtle',
+          number: '#007',
+          meta: 'Lv. 9 · Maschio',
+          types: ['Acqua']
+        },
+        {
+          id: 39,
+          icon: '🎵',
+          name: 'Jigglypuff',
+          number: '#039',
+          meta: 'Lv. 8 · Femmina',
+          types: ['Normale', 'Folletto']
+        },
+        {
+          id: 133,
+          icon: '⭐',
+          name: 'Eevee',
+          number: '#133',
+          meta: 'Lv. 13 · Femmina',
+          types: ['Normale']
+        }
+      ];
+
+
+      function updateTeamStats() {
+        var cards = teamList.querySelectorAll('.team-card');
+        var total = cards.length;
+
+        teamCount.textContent = total;
+        freeSlots.textContent = Math.max(maxTeamSize - total, 0);
+        teamCounter.textContent = total + ' / ' + maxTeamSize;
+        emptyTeam.classList.toggle('visible', total === 0);
+      }
+
+      function bindRemoveButton(card) {
+        var button = card.querySelector('.remove-btn');
+        if (!button) return;
+
+        button.addEventListener('click', function() {
+          card.remove();
+          updateTeamStats();
+        });
+      }
+
+      function createPokemonCard(pokemon) {
+        var card = document.createElement('article');
+        card.className = 'team-card';
+        card.setAttribute('data-id', pokemon.id);
+
+        var tags = pokemon.types.map(function(type) {
+          return '<span class="type-tag">' + type + '</span>';
+        }).join('');
+
+        card.innerHTML =
+          '<div class="pokemon-sprite" aria-hidden="true">' + pokemon.icon + '</div>' +
+          '<div class="pokemon-info">' +
+          '<div class="pokemon-name-row">' +
+          '<h3 class="pokemon-name">' + pokemon.name + '</h3>' +
+          '<span class="pokemon-number">' + pokemon.number + '</span>' +
+          '</div>' +
+          '<p class="pokemon-meta">' + pokemon.meta + '</p>' +
+          '<div class="type-tags">' + tags + '</div>' +
+          '</div>' +
+          '<button class="remove-btn" type="button" aria-label="Rimuovi ' + pokemon.name + ' dal team">×</button>';
+
+        bindRemoveButton(card);
+        return card;
+      }
+
+
+      logoutBtn.addEventListener('click', function() {
+        profileScreen.classList.remove('active');
+        loginScreen.classList.add('active');
+        trainerName.focus();
+      });
+
+      addDemoBtn.addEventListener('click', function() {
+        var total = teamList.querySelectorAll('.team-card').length;
+        if (total >= maxTeamSize) return;
+
+        var pokemon = demoPokemon[total % demoPokemon.length];
+        teamList.appendChild(createPokemonCard(pokemon));
+        updateTeamStats();
+      });
+
+      teamList.querySelectorAll('.team-card').forEach(bindRemoveButton);
+      updateTeamStats();
+    })();
+  </script>
+
+</body>
+
+</html>
