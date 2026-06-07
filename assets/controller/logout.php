@@ -7,5 +7,5 @@ if (session_status() === PHP_SESSION_NONE) {
 // destroy the session
 session_destroy();
 // redirect to the index page
-header('Location: ../../index.php');
+header('Location: ../../view/team.php');
 exit;

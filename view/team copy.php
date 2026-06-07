@@ -608,17 +608,9 @@ if ($allenatoreId > 0) {
             <div class="avatar" id="trainerAvatar"><?= strtoupper($allenatore['nomeAllenatore'][0]) ?></div>
             <div class="profile-info">
               <h2 class="profile-name" id="profileName"><?= $allenatore['nomeAllenatore'] ?></h2>
-              <div class="profile-badges" style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
-                <span class="type-tag" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
-                  Rango: <?= $allenatore['rangoNome'] ?>
-                </span>
-                <span class="type-tag" style="background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff;">
-                  Età: <?= $allenatore['rangeEtaNome'] ?>
-                </span>
-              </div>
+              <p class="profile-role">Profilo allenatore Pokémon</p>
             </div>
           </div>
-
 
           <div class="stats-row">
             <div class="stat-box">

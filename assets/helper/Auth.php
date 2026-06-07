@@ -68,8 +68,8 @@ class Auth
             // setto le variabili di sessione con i dati dell'utente
             $_SESSION['allenatoreId'] = $userData['id'];
             $_SESSION['nomeAllenatore'] = $userData['nomeAllenatore'];
-            $_SESSION['codiceProfilo'] = $userData['codiceProfilo'];
-            $_SESSION['master'] = $userData['master'];
+            $_SESSION['codiceProfilo'] = $userData['codiceProfilo'] ?? "";
+            $_SESSION['master'] = $userData['master'] ?? null;
 
             // ritorno true se l'utente è autenticato
             return true;

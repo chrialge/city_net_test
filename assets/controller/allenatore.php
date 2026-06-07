@@ -2,7 +2,9 @@
 
 require_once __DIR__ . '/../helper/Auth.php';
 require_once __DIR__ . '/../helper/db.php';
-
+require_once __DIR__ . '/../models/allenatore.php';
+require_once __DIR__ . "/pokemon.php";
+require_once __DIR__ . "/../helper/function.php";
 
 
 
@@ -43,6 +45,32 @@ if (!empty($_POST['nomeAllenatore']) && !empty($_POST['codiceProfilo'])) {
     }
 }
 
+function getAllenatoreId($id)
+{
+    $connection = DB::connect();
+    $allenatore = Allenatore::getAllenatoreById($connection, $id);
+    DB::Disconnect($connection);
+    return $allenatore;
+}
 
 
-function getTeamPokemon($idAllenatore) {}
+function getTeamPokemon($idAllenatore)
+{
+
+    $connection = DB::connect();
+    $teamPokemon = Allenatore::getTeamPokemon($connection, $idAllenatore);
+    DB::Disconnect($connection);
+
+    if (count($teamPokemon) > 0) {
+        $array = [];
+        foreach ($teamPokemon as $pokemon) {
+            $newDataPokemon = Pokemon::getPokemonById($pokemon['idPokemon']);
+            $pokemonNew = getPokemonDetailFromPokeAPI(intval($newDataPokemon['numeroPokedex']));
+            array_push($array, $pokemonNew);
+        }
+
+        return $array;
+    } else {
+        return $teamPokemon;
+    }
+}
