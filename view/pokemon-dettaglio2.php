@@ -1,13 +1,4 @@
 <?php
-
-require_once __DIR__ . '/../assets/controller/pokemon.php';
-require_once __DIR__ . '/../assets/controller/conoscenze.php';
-require_once __DIR__ . '/../assets/controller/categorie_conoscenze.php';
-require_once __DIR__ . '/../assets/controller/ranghi.php';
-require_once __DIR__ . '/../assets/helper/function.php';
-
-
-
 function render_dots(
   int $level,
   int $max = 5,
@@ -43,268 +34,39 @@ function render_dots(
   return $html . '</div>';
 }
 
-$pokemonId = isset($_GET['id']) ? intval($_GET['id']) : null;
-$pokemon = $pokemonId ? getPokemonById($pokemonId) : null;
-
-
-
-$pokemonEvolution = getPokemonChainEvolution($pokemonId);
-$ranghi = getAllRanghi();
-echo '<pre>';
-print_r($ranghi);
-echo '</pre>';
-
-
-
-
-
-
-$conoscenze = getAllConoscenze();
-
-$categorieConoscenze = getAllCategorieConoscenze();
-
-// Inizializza array conoscenze in ogni categoria e popola usando riferimento
-foreach ($categorieConoscenze as &$categoria) {
-  $categoria['conoscenze'] = [];
-  foreach ($conoscenze as $conoscenza) {
-    if (isset($conoscenza['idCategoriaConoscenza']) && $categoria['id'] == $conoscenza['idCategoriaConoscenza']) {
-      $categoria['conoscenze'][] = $conoscenza;
-    }
-  }
-}
-unset($categoria);
-
-function safe_color(string $color): string
-{
-  $color = trim($color);
-  if ($color === '') {
-    return '';
-  }
-  if (preg_match('/^#(?:[0-9a-f]{3}|[0-9a-f]{6}|[0-9a-f]{8})$/i', $color)) {
-    return $color;
-  }
-  if (preg_match('/^(rgb|rgba|hsl|hsla)\(/i', $color)) {
-    return $color;
-  }
-  return '';
-}
-
-function hex_to_rgb(string $hex): ?array
-{
-  $hex = ltrim($hex, '#');
-  if (strlen($hex) === 3) {
-    $hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
-  }
-  if (strlen($hex) !== 6) {
-    return null;
-  }
-  return [
-    hexdec(substr($hex, 0, 2)),
-    hexdec(substr($hex, 2, 2)),
-    hexdec(substr($hex, 4, 2)),
-  ];
-}
-
-function is_dark_color(string $color): bool
-{
-  $rgb = hex_to_rgb($color);
-  if ($rgb === null) {
-    return false;
-  }
-  [$r, $g, $b] = $rgb;
-  $luminance = (0.299 * $r + 0.587 * $g + 0.114 * $b) / 255;
-  return $luminance < 0.55;
-}
-
-function type_colors(array $type): array
-{
-  $candidates = [
-    'colorePrimario',
-    'colorePrincipale',
-    'coloreSecondario',
-    'coloreSecondario',
-    'coloreTerzario',
-    'coloreTerziario',
-  ];
-
-  $colors = [];
-  foreach ($candidates as $key) {
-    if (!isset($type[$key])) {
-      continue;
-    }
-    $color = safe_color((string) $type[$key]);
-    if ($color === '') {
-      continue;
-    }
-    if (!in_array($color, $colors, true)) {
-      $colors[] = $color;
-    }
-  }
-  return $colors;
-}
-
-function type_palette(array $types): array
-{
-  $colors = [];
-  $explicitText = '';
-  foreach ($types as $type) {
-    $typeColors = type_colors($type);
-    $added = 0;
-    foreach ($typeColors as $color) {
-      if (!in_array($color, $colors, true)) {
-        $colors[] = $color;
-        $added++;
-      }
-    }
-    // Se questa tipologia ha effettivamente contribuito colori, cerca un coloreTesto
-    if ($added > 0 && $explicitText === '') {
-      foreach (['coloreTesto', 'colore_testo', 'colore_text', 'colore_texto', 'textColor', 'text_color'] as $txtKey) {
-        if (isset($type[$txtKey])) {
-          $c = safe_color((string) $type[$txtKey]);
-          if ($c !== '') {
-            $explicitText = $c;
-            break;
-          }
-        }
-      }
-    }
-  }
-
-  if (count($colors) === 0) {
-    return [
-      'bg' => '#fefce8',
-      'bg_deep' => '#fef08a',
-      'accent' => '#eab308',
-      'accent_dark' => '#a16207',
-      'text' => '#422006',
-    ];
-  }
-
-  $primary = $colors[0];
-  $secondary = $colors[1] ?? $primary;
-  $tertiary = $colors[2] ?? $secondary;
-  $accent = $tertiary;
-  $accentExplicit = "";
-  // Se è stato fornito esplicitamente un colore testo (solo da tipologie con colori), usalo come priorità
-  $text = $explicitText !== '' ? $explicitText : (is_dark_color($primary) ? '#ffffff' : '#111827');
-  $accent_foreground = $accentExplicit !== '' ? $accentExplicit : (is_dark_color($accent) ? '#ffffff' : '#111827');
-
-  return [
-    'bg' => $primary,
-    'bg_deep' => $secondary,
-    'accent' => $accent,
-    'accent_dark' => is_dark_color($accent) ? '#ffffff' : '#1f2937',
-    'accent_foreground' => $accent_foreground,
-    'text' => $text,
-  ];
-}
-
-function header_style_for_types(array $types): string
-{
-  $colors = [];
-  foreach ($types as $type) {
-    $typeColors = type_colors($type);
-    if (count($types) === 1) {
-      // per un solo tipo usiamo tutti i suoi colori disponibili
-      $colors = array_merge($colors, $typeColors);
-      break;
-    }
-    if (!empty($typeColors)) {
-      $colors[] = $typeColors[0];
-    }
-  }
-
-  $colors = array_values(array_unique(array_filter($colors)));
-  if (count($colors) === 0) {
-    return '';
-  }
-  if (count($colors) === 1) {
-    $textColor = is_dark_color($colors[0]) ? '#ffffff' : '#111827';
-    return sprintf('background: %s; color: %s;', $colors[0], $textColor);
-  }
-
-  $textColor = is_dark_color($colors[0]) ? '#ffffff' : '#111827';
-  $stops = [];
-  $step = 100 / (count($colors) - 1);
-  foreach ($colors as $index => $color) {
-    $stops[] = sprintf('%s %d%%', $color, (int) round($index * $step));
-  }
-
-  return sprintf('background: linear-gradient(135deg, %s); color: %s;', implode(', ', $stops), $textColor);
-}
-
-function badge_style_for_type(array $type): string
-{
-  $colors = type_colors($type);
-  if (count($colors) === 0) {
-    return '';
-  }
-  $background = count($colors) === 1
-    ? $colors[0]
-    : sprintf('linear-gradient(135deg, %s)', implode(', ', $colors));
-  // Preferenza per campo coloreTesto nella singola tipologia
-  $textColor = '';
-  foreach (['coloreTesto', 'colore_testo', 'colore_text', 'colore_texto', 'textColor', 'text_color'] as $txtKey) {
-    if (isset($type[$txtKey])) {
-      $c = safe_color((string) $type[$txtKey]);
-      if ($c !== '') {
-        $textColor = $c;
-        break;
-      }
-    }
-  }
-  if ($textColor === '') {
-    $textColor = is_dark_color($colors[0]) ? '#ffffff' : '#111827';
-  }
-  return sprintf('background: %s; color: %s; border-color: rgba(0,0,0,0.08);', $background, $textColor);
-}
-
-$heroStyle = header_style_for_types($pokemon['tipologie']);
-$typePalette = type_palette($pokemon['tipologie']);
-$bodyStyle = sprintf(
-  '--type-bg:%s; --type-bg-deep:%s; --type-accent:%s; --type-accent-dark:%s; --type-accent-foreground:%s; --type-text:%s;',
-  $typePalette['bg'],
-  $typePalette['bg_deep'],
-  $typePalette['accent'],
-  $typePalette['accent_dark'],
-  $typePalette['accent_foreground'],
-  $typePalette['text']
-);
-
-
-
-
-$pokemon_skills = [];
-
-foreach ($conoscenze as $conoscenza) {
-  $key = strtolower($conoscenza['nome']);
-  $pokemon_skills[$key] = 0;
-}
-
-// Se chiamiamo render_dots su una skill non inizializzata, usiamo 0 come default.
-
-$base_hp = intval($pokemon['hp']);
+// Limite pallini attributi combattimento (varia per specie — da DB)
+$attr_dots_max = 12;
+$base_hp = 4;
 
 $pokemon_attrs = [
-  'strength' => intval($pokemon['baseStrenght']),
-  'limiteStrength' => intval($pokemon['massimoStrenght']),
-  'dexterity' => intval($pokemon['baseDexterity']),
-  'limiteDexterity' => intval($pokemon['massimoDexterity']),
-  'vitality' => intval($pokemon['baseVitality']),
-  'limiteVitality' => intval($pokemon['massimoVitality']),
-  'special' => intval($pokemon['baseSpecial']),
-  'limiteSpecial' => intval($pokemon['massimoSpecial']),
-  'insight' => intval($pokemon['baseInsight']),
-  'limiteInsight' => intval($pokemon['massimoInsight']),
+  'strength' => 1,
+  'dexterity' => 3,
+  'vitality' => 2,
+  'special' => 3,
+  'insight' => 2,
 ];
 
+$pokemon_skills = [
+  'brawl' => 1,
+  'channel' => 2,
+  'clash' => 2,
+  'evasion' => 3,
+  'alert' => 2,
+  'athletic' => 2,
+  'nature' => 2,
+  'stealth' => 1,
+  'allure' => 2,
+  'etiquette' => 1,
+  'intimidate' => 1,
+  'perform' => 2,
+];
 
 $pokemon_social = [
-  'tough' => 1,
-  'cool' => 1,
+  'tough' => 2,
+  'cool' => 2,
   'beauty' => 1,
-  'cute' => 1,
-  'clever' => 1,
+  'cute' => 4,
+  'clever' => 3,
 ];
 
 $pokemon_ranks = [
@@ -317,11 +79,27 @@ $pokemon_ranks = [
   'champion' => 'Champion',
 ];
 
-$pokemon_rank = strtolower($pokemon['rangoNome']);
-
+$pokemon_rank = 'beginner';
+$pokemon_species_abilities = [
+  [
+    'slug' => 'static',
+    'name_en' => 'Static',
+    'name_it' => 'Statico',
+    'description' => 'Il Pokémon può paralizzare il nemico al contatto.',
+    'effect' => 'Quando un Pokémon avversario usa una mossa a contatto contro questo Pokémon, c\'è il 30% di probabilità che venga paralizzato.',
+  ],
+  [
+    'slug' => 'lightning-rod',
+    'name_en' => 'Lightning Rod',
+    'name_it' => 'Parafulmini',
+    'description' => 'Il Pokémon attira tutte le mosse di tipo Elettro. Invece di ricevere danni da mosse di tipo Elettro, aumenta il suo Attacco Speciale.',
+    'effect' => 'Immune alle mosse di tipo Elettro. Se viene colpito da una mossa di tipo Elettro (propria o avversaria), non subisce danni e aumenta di un livello il suo Attacco Speciale (+1 stadio). In squadra, attira verso sé le mosse Elettro rivolte agli alleati.',
+  ],
+];
 
 
 $sheet_config = [
+  'attrDotsMax' => $attr_dots_max,
   'baseHp' => $base_hp,
   'rank' => $pokemon_rank,
   'attrs' => $pokemon_attrs,
@@ -329,69 +107,27 @@ $sheet_config = [
   'social' => $pokemon_social,
 ];
 
-// Calcolo dei massimali cumulativi in base al Rango attuale del Pokémon
-$max_attributi_cumulati = 0;
-$max_sociali_cumulati = 0;
-$max_conoscenze_cumulati = 0;
-$limite_singola_conoscenza = 1;
+$pokemon_dex_min = 1;
+$pokemon_dex_max = 1025;
+$pokemon_id = isset($_GET['id'])
+  ? max($pokemon_dex_min, min($pokemon_dex_max, (int) $_GET['id']))
+  : 25;
+$pokemon_name = 'Pikachu';
+$pokemon_prev_id = $pokemon_id > $pokemon_dex_min ? $pokemon_id - 1 : null;
+$pokemon_next_id = $pokemon_id < $pokemon_dex_max ? $pokemon_id + 1 : null;
 
-$js_rank_config = [];
-
-echo "<pre>";
-print_r($ranghi);
-echo "</pre>";
-
-foreach ($ranghi as $rango) {
-  $key = strtolower($rango['nome']);
-
-  // Accumuliamo i punti fino al rango corrente del Pokémon
-  $max_attributi_cumulati += $rango['attributi'];
-  $max_sociali_cumulati += $rango['attributiSociali'];
-  $max_conoscenze_cumulati = $rango['puntiConoscenza'];
-
-  // Salviamo la configurazione progressiva da passare a JS
-  $js_rank_config[$key] = [
-    'max_attr' => $max_attributi_cumulati,
-    'max_social' => $max_sociali_cumulati,
-    'max_skills' => $max_conoscenze_cumulati,
-    'skill_level_cap' => $rango['limiteLivelloConoscenza']
-  ];
-}
-
-// Struttura di configurazione aggiornata per JavaScript
-
-$sheet_config = [
-  'baseHp' => $base_hp,
-  'rank' => $pokemon_rank,
-  'attrs' => $pokemon_attrs,
-  'skills' => $pokemon_skills,
-  'social' => $pokemon_social,
-  'rank_config' => $js_rank_config // Passiamo tutta la struttura cumulata a JS
+// Catena evolutiva (da DB / PokéAPI — esempio Pikachu)
+$pokemon_evolutions = [
+  ['id' => 172, 'name' => 'Pichu', 'method' => 'Alta amicizia'],
+  ['id' => 25, 'name' => 'Pikachu', 'current' => true],
+  ['id' => 26, 'name' => 'Raichu', 'method' => 'Pietratuono'],
 ];
-
-
-
-
-
 
 function pokemon_sprite_url(int $id): string
 {
   return 'https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/other/official-artwork/'
     . $id . '.png';
 }
-
-$pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
-
-
-$pokemon_species_abilities = $pokemon["abilita"];
-
-$pokemon_dex_min = 1;
-$pokemon_dex_max = 1025;
-
-
-$pokemon_prev_id = $pokemonId > $pokemon_dex_min ? $pokemonId - 1 : null;
-$pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
-
 ?>
 <!DOCTYPE html>
 <html lang="it">
@@ -423,8 +159,8 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
     body {
       margin: 0;
       font-family: Arial, sans-serif;
-      background: linear-gradient(180deg, var(--type-bg, #fefce8) 0%, #fffbeb 45%, #ffffff 100%);
-      color: var(--type-text, #1f2937);
+      background: #fffbeb;
+      color: #1f2937;
     }
 
     .app {
@@ -433,13 +169,13 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
       margin: 0 auto;
       min-height: 100vh;
       min-height: 100dvh;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(255, 255, 255, 0.9));
+      background: #ffffff;
       display: flex;
       flex-direction: column;
     }
 
     .detail-header {
-
+      position: sticky;
       top: 0;
       z-index: 10;
       background: linear-gradient(180deg, #ffffff 0%, var(--type-bg) 55%, var(--type-bg-deep) 100%);
@@ -520,11 +256,11 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
     }
 
     .hero-image {
-      width: min(220px, 72vw);
-      height: min(220px, 72vw);
+      width: min(220px, 58vw);
+      height: min(220px, 58vw);
       object-fit: contain;
       filter: drop-shadow(0 10px 20px rgba(234, 179, 8, 0.35));
-      margin-bottom: 8px;
+      flex-shrink: 0;
     }
 
     .pokemon-number {
@@ -535,12 +271,11 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
       letter-spacing: 0.06em;
     }
 
-
     .hero-center h1 {
       margin: 0 0 12px;
       font-size: clamp(2rem, 9vw, 2.75rem);
       line-height: 1.05;
-      color: var(--type-text, #111827);
+      color: #111827;
     }
 
     .type-list {
@@ -590,7 +325,7 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
       margin: 10px 0 0;
       font-size: 13px;
       line-height: 1.45;
-      color: var(--type-text, #78350f);
+      color: #78350f;
       text-align: center;
     }
 
@@ -604,8 +339,8 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
     }
 
     .btn.is-active {
-      background: var(--type-accent-dark);
-      color: var(--type-text);
+      background: #422006;
+      color: #fef08a;
     }
 
     .type-fire {
@@ -637,7 +372,7 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
       font-weight: bold;
       text-transform: uppercase;
       letter-spacing: 0.06em;
-      color: var(--type-text, var(--type-accent-dark));
+      color: var(--type-accent-dark);
     }
 
     .rank-select {
@@ -763,6 +498,161 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
 
     .data-item.full {
       grid-column: 1 / -1;
+    }
+
+    .species-abilities {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 4px;
+      font-size: 15px;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .species-ability {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .species-ability-sep {
+      color: #9ca3af;
+      font-weight: normal;
+      margin: 0 2px;
+    }
+
+    .ability-info-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: 1.5px solid var(--type-accent-dark);
+      border-radius: 50%;
+      background: #fffbeb;
+      color: var(--type-accent-dark);
+      font-size: 11px;
+      font-weight: bold;
+      font-style: italic;
+      font-family: Georgia, 'Times New Roman', serif;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .ability-info-btn:hover,
+    .ability-info-btn:focus-visible {
+      background: var(--type-accent);
+      border-color: var(--type-accent);
+      color: #fff;
+      outline: none;
+    }
+
+    .ability-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(17, 24, 39, 0.55);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+
+    .ability-modal.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .ability-modal-dialog {
+      width: min(420px, 100%);
+      max-height: min(85vh, 560px);
+      overflow: auto;
+      background: #ffffff;
+      border-radius: 18px;
+      border: 2px solid var(--type-accent);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      padding: 20px 18px 18px;
+      transform: translateY(12px) scale(0.98);
+      transition: transform 0.2s;
+    }
+
+    .ability-modal.is-open .ability-modal-dialog {
+      transform: translateY(0) scale(1);
+    }
+
+    .ability-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .ability-modal-title {
+      margin: 0;
+      font-size: 20px;
+      color: #111827;
+      line-height: 1.2;
+    }
+
+    .ability-modal-subtitle {
+      margin: 4px 0 0;
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: normal;
+    }
+
+    .ability-modal-close {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: #f3f4f6;
+      color: #374151;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .ability-modal-close:hover,
+    .ability-modal-close:focus-visible {
+      background: #e5e7eb;
+      outline: none;
+    }
+
+    .ability-modal-section {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #f3f4f6;
+    }
+
+    .ability-modal-section:first-of-type {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+
+    .ability-modal-section h3 {
+      margin: 0 0 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #6b7280;
+    }
+
+    .ability-modal-section p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #1f2937;
     }
 
     .stat-list {
@@ -1117,11 +1007,10 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
 
     .skill-item {
       display: flex;
-      flex-direction: row;
+      flex-direction: column;
       align-items: center;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 10px 12px;
+      gap: 8px;
+      padding: 10px 8px 12px;
       background: #f9fafb;
       border-radius: 10px;
       min-height: calc(var(--dots-track-h) + 2rem + 14px);
@@ -1132,41 +1021,16 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
     }
 
     .skill-name {
-      flex: 1 1 auto;
+      width: 100%;
       font-size: 13px;
       font-weight: bold;
       color: #374151;
       text-transform: capitalize;
       line-height: 1.2;
-      text-align: left;
+      text-align: center;
       white-space: nowrap;
       overflow: hidden;
       text-overflow: ellipsis;
-      padding-right: 8px;
-    }
-
-    .skill-row {
-      flex-direction: column;
-      display: flex;
-      align-items: center;
-      width: 100%;
-      gap: 12px;
-    }
-
-    .skill-dots {
-      flex: 0 0 auto;
-    }
-
-    @media (max-width: 600px) {
-      .skill-item {
-        flex-direction: column;
-        align-items: center;
-      }
-
-      .skill-name {
-        text-align: center;
-        padding-right: 0;
-      }
     }
 
     .skill-group-extra.is-empty {
@@ -1228,12 +1092,12 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
 
     .btn-primary {
       background: var(--type-accent);
-      color: var(--type-text, #1f2937);
+      color: #1f2937;
     }
 
     .btn-light {
       background: var(--type-bg);
-      color: var(--type-text, var(--type-accent-dark));
+      color: var(--type-accent-dark);
       border: 1px solid var(--type-bg-deep);
     }
 
@@ -1365,7 +1229,6 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
         grid-column: 1 / -1;
       }
 
-
       .hero-image-nav {
         max-width: 380px;
         gap: 10px;
@@ -1408,185 +1271,18 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
         border-radius: 0 0 24px 24px;
       }
     }
-
-
-    .species-abilities {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 6px 4px;
-      font-size: 15px;
-      font-weight: bold;
-      color: #111827;
-    }
-
-    .species-ability {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-    }
-
-    .species-ability-sep {
-      color: #9ca3af;
-      font-weight: normal;
-      margin: 0 2px;
-    }
-
-    .ability-info-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 18px;
-      height: 18px;
-      padding: 0;
-      border: 1.5px solid var(--type-accent-dark);
-      border-radius: 50%;
-      background: #fffbeb;
-      color: var(--type-accent-dark);
-      font-size: 11px;
-      font-weight: bold;
-      font-style: italic;
-      font-family: Georgia, 'Times New Roman', serif;
-      line-height: 1;
-      cursor: pointer;
-      flex-shrink: 0;
-      transition: background 0.15s, color 0.15s, border-color 0.15s;
-    }
-
-    .ability-info-btn:hover,
-    .ability-info-btn:focus-visible {
-      background: var(--type-accent);
-      border-color: var(--type-accent);
-      color: #fff;
-      outline: none;
-    }
-
-    .ability-modal {
-      position: fixed;
-      inset: 0;
-      z-index: 100;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 16px;
-      background: rgba(17, 24, 39, 0.55);
-      opacity: 0;
-      visibility: hidden;
-      transition: opacity 0.2s, visibility 0.2s;
-    }
-
-    .ability-modal.is-open {
-      opacity: 1;
-      visibility: visible;
-    }
-
-    .ability-modal-dialog {
-      width: min(420px, 100%);
-      max-height: min(85vh, 560px);
-      overflow: auto;
-      background: #ffffff;
-      border-radius: 18px;
-      border: 2px solid var(--type-accent);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-      padding: 20px 18px 18px;
-      transform: translateY(12px) scale(0.98);
-      transition: transform 0.2s;
-    }
-
-    .ability-modal.is-open .ability-modal-dialog {
-      transform: translateY(0) scale(1);
-    }
-
-    .ability-modal-header {
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      margin-bottom: 14px;
-    }
-
-    .ability-modal-title {
-      margin: 0;
-      font-size: 20px;
-      color: #111827;
-      line-height: 1.2;
-    }
-
-    .ability-modal-subtitle {
-      margin: 4px 0 0;
-      font-size: 14px;
-      color: #6b7280;
-      font-weight: normal;
-    }
-
-    .ability-modal-close {
-      flex-shrink: 0;
-      width: 32px;
-      height: 32px;
-      border: none;
-      border-radius: 50%;
-      background: #f3f4f6;
-      color: #374151;
-      font-size: 20px;
-      line-height: 1;
-      cursor: pointer;
-    }
-
-    .ability-modal-close:hover,
-    .ability-modal-close:focus-visible {
-      background: #e5e7eb;
-      outline: none;
-    }
-
-    .ability-modal-section {
-      margin-top: 14px;
-      padding-top: 14px;
-      border-top: 1px solid #f3f4f6;
-    }
-
-    .ability-modal-section:first-of-type {
-      margin-top: 0;
-      padding-top: 0;
-      border-top: none;
-    }
-
-    .ability-modal-section h3 {
-      margin: 0 0 6px;
-      font-size: 11px;
-      text-transform: uppercase;
-      letter-spacing: 0.04em;
-      color: #6b7280;
-    }
-
-    .ability-modal-section p {
-      margin: 0;
-      font-size: 14px;
-      line-height: 1.5;
-      color: #1f2937;
-    }
-
-    .section-alert-banner {
-      margin-top: 14px;
-      padding: 12px 14px;
-      background: rgba(255, 255, 255, 0.6);
-      border-left: 4px solid var(--type-accent);
-      border-radius: 8px;
-      font-size: 13px;
-      line-height: 1.45;
-      color: var(--type-text);
-    }
-
-    .section-alert-banner strong {
-      color: var(--type-accent-dark);
-    }
   </style>
 </head>
 
-<body style="<?= htmlspecialchars($bodyStyle, ENT_QUOTES, 'UTF-8'); ?>">
+<body>
 
   <main class="app">
 
-    <header class="detail-header" style="<?= htmlspecialchars($heroStyle, ENT_QUOTES, 'UTF-8'); ?>">
+    <header class="detail-header type-electric">
+      <div class="header-top">
+        <a href="pokemon.php" class="back-link">← Torna al Dex</a>
+      </div>
+
       <div class="hero-center">
         <div class="hero-image-nav">
           <?php if ($pokemon_prev_id !== null): ?>
@@ -1597,10 +1293,12 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
           <?php else: ?>
             <span class="hero-nav-btn hero-nav-prev is-disabled" aria-hidden="true">&lsaquo;</span>
           <?php endif; ?>
+
           <img
             class="hero-image"
-            src="<?= $pokemonApi['img'] ?? '' ?>"
-            alt="Immagine ufficiale di <?= htmlspecialchars($pokemon['nome'], ENT_QUOTES, 'UTF-8') ?>">
+            src="<?php echo htmlspecialchars(pokemon_sprite_url($pokemon_id), ENT_QUOTES, 'UTF-8'); ?>"
+            alt="<?php echo htmlspecialchars($pokemon_name, ENT_QUOTES, 'UTF-8'); ?>">
+
           <?php if ($pokemon_next_id !== null): ?>
             <a
               href="pokemon-dettaglio.php?id=<?php echo (int) $pokemon_next_id; ?>"
@@ -1610,14 +1308,10 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
             <span class="hero-nav-btn hero-nav-next is-disabled" aria-hidden="true">&rsaquo;</span>
           <?php endif; ?>
         </div>
-        <p class="pokemon-number"><?= $pokemon['numeroPokedex'] ?></p>
-        <h1><?= htmlspecialchars($pokemon['nome'], ENT_QUOTES, 'UTF-8') ?></h1>
+        <p class="pokemon-number">#<?php echo str_pad((string) $pokemon_id, 3, '0', STR_PAD_LEFT); ?></p>
+        <h1><?php echo htmlspecialchars($pokemon_name, ENT_QUOTES, 'UTF-8'); ?></h1>
         <div class="type-list">
-          <?php foreach ($pokemon['tipologie'] as $type): ?>
-            <span class="type" style="<?= htmlspecialchars(badge_style_for_type($type), ENT_QUOTES, 'UTF-8'); ?>">
-              <?= htmlspecialchars($type['nome'], ENT_QUOTES, 'UTF-8') ?>
-            </span>
-          <?php endforeach; ?>
+          <span class="type type-electric">Elettro</span>
         </div>
 
         <div class="hero-actions">
@@ -1645,35 +1339,37 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
           <section class="panel profile-dati">
             <div class="panel-title">
               <h2>Dati base</h2>
+              <span class="panel-badge">PokéAPI · PokéRole</span>
             </div>
 
             <div class="data-grid">
               <div class="data-item full">
                 <strong>Abilità specie</strong>
-                <span><?php foreach ($pokemon['abilita'] as $index => $ability): ?>
-                    <?= $ability['nomeItaliano'] ?>
+                <div class="species-abilities">
+                  <?php foreach ($pokemon_species_abilities as $index => $ability): ?>
                     <?php if ($index > 0): ?>
                       <span class="species-ability-sep" aria-hidden="true">/</span>
                     <?php endif; ?>
                     <span class="species-ability">
-                      <?php echo htmlspecialchars($ability['nome'], ENT_QUOTES, 'UTF-8'); ?>
+                      <?php echo htmlspecialchars($ability['name_en'], ENT_QUOTES, 'UTF-8'); ?>
                       <button
                         type="button"
                         class="ability-info-btn"
-                        data-ability="<?php echo htmlspecialchars($ability['nome'], ENT_QUOTES, 'UTF-8'); ?>"
-                        aria-label="Info su <?php echo htmlspecialchars($ability['nomeItaliano'], ENT_QUOTES, 'UTF-8'); ?>">i</button>
+                        data-ability="<?php echo htmlspecialchars($ability['slug'], ENT_QUOTES, 'UTF-8'); ?>"
+                        aria-label="Info su <?php echo htmlspecialchars($ability['name_it'], ENT_QUOTES, 'UTF-8'); ?>">i</button>
                     </span>
-                  <?php endforeach; ?></span>
+                  <?php endforeach; ?>
+                </div>
               </div>
 
               <div class="data-item">
                 <strong>Altezza</strong>
-                <span><?= number_format(($pokemonApi['altezza'] ?? 0) / 10, 1, '.', '') ?> m</span>
+                <span>0.4 m</span>
               </div>
 
               <div class="data-item">
                 <strong>Peso</strong>
-                <span><?= $pokemonApi['peso'] ?? '6 kg' ?></span>
+                <span>6 kg</span>
               </div>
 
               <div class="data-item">
@@ -1686,18 +1382,22 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
           <div class="profile-side">
             <section class="panel profile-desc">
               <div class="panel-title">
-                <h2>Descrizione</h2>
-
+                <h2>Descrizione GDR</h2>
+                <span class="panel-badge">Note</span>
               </div>
 
               <p class="notes">
-                <?php echo nl2br(htmlspecialchars($pokemon['descrizioni'], ENT_QUOTES, 'UTF-8')); ?>
+                Vive in piccoli gruppi nelle foreste e tende a restare nascosto.
+                Accumula elettricità nelle sacche sulle guance e usa la coda per
+                scaricare l’energia in eccesso. Può essere testardo e diffidente
+                verso gli sconosciuti.
               </p>
             </section>
 
             <section class="panel profile-weakness">
               <div class="panel-title">
                 <h2>Debolezze</h2>
+                <span class="panel-badge">Tipo</span>
               </div>
 
               <div class="weakness-list">
@@ -1719,72 +1419,118 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
         <section class="panel panel-wide" id="sectionAbilita">
           <div class="panel-title">
             <h2>Abilità</h2>
-
-          </div>
-          <div class="section-alert-banner">
-            <strong>Info Abilità:</strong> Rappresentano il bagaglio di competenze e conoscenze del Pokémon. Il livello massimo raggiungibile su una singola abilità e i punti totali spendibili dipendono strettamente dal suo <em>Rango attuale</em>.
+            <span class="panel-badge">PokéRole</span>
           </div>
 
           <div class="skill-groups">
 
-
-            <?php foreach ($categorieConoscenze as $categoria): ?>
-              <?php if ($categoria['visibilePokemon'] == 1 && count($categoria['conoscenze']) > 0): ?>
-                <div class="skill-group">
-                  <h3 class="skill-group-title"><?php echo htmlspecialchars($categoria['nome'], ENT_QUOTES, 'UTF-8'); ?></h3>
-                  <div class="skill-list">
-                    <?php foreach ($categoria['conoscenze'] as $conoscenza): ?>
-
-                      <?php if ($conoscenza['visibilePokemon'] == 1): ?>
-                        <div class="skill-item">
-
-                          <div class="skill-row">
-                            <span class="skill-name"><?php echo $conoscenza['nomi'] ?></span>
-                            <div class="skill-dots"><?php echo render_dots($pokemon_skills[strtolower($conoscenza['nome'])] ?? 0, 5, true, null, strtolower($conoscenza['nome'])); ?></div>
-                          </div>
-                        </div>
-                      <?php endif; ?>
-                    <?php endforeach; ?>
-                  </div>
+            <div class="skill-group">
+              <h3 class="skill-group-title">Fight</h3>
+              <div class="skill-list">
+                <div class="skill-item">
+                  <span class="skill-name">Brawl</span>
+                  <?php echo render_dots($pokemon_skills['brawl'], 5, true, null, 'brawl'); ?>
                 </div>
-              <?php endif; ?>
-            <?php endforeach; ?>
+                <div class="skill-item">
+                  <span class="skill-name">Channel</span>
+                  <?php echo render_dots($pokemon_skills['channel'], 5, true, null, 'channel'); ?>
+                </div>
+                <div class="skill-item">
+                  <span class="skill-name">Clash</span>
+                  <?php echo render_dots($pokemon_skills['clash'], 5, true, null, 'clash'); ?>
+                </div>
+                <div class="skill-item">
+                  <span class="skill-name">Evasion</span>
+                  <?php echo render_dots($pokemon_skills['evasion'], 5, true, null, 'evasion'); ?>
+                </div>
+              </div>
+            </div>
 
+            <div class="skill-group">
+              <h3 class="skill-group-title">Survival</h3>
+              <div class="skill-list">
+                <div class="skill-item">
+                  <span class="skill-name">Alert</span>
+                  <?php echo render_dots($pokemon_skills['alert'], 5, true, null, 'alert'); ?>
+                </div>
+                <div class="skill-item">
+                  <span class="skill-name">Athletic</span>
+                  <?php echo render_dots($pokemon_skills['athletic'], 5, true, null, 'athletic'); ?>
+                </div>
+                <div class="skill-item">
+                  <span class="skill-name">Nature</span>
+                  <?php echo render_dots($pokemon_skills['nature'], 5, true, null, 'nature'); ?>
+                </div>
+                <div class="skill-item">
+                  <span class="skill-name">Stealth</span>
+                  <?php echo render_dots($pokemon_skills['stealth'], 5, true, null, 'stealth'); ?>
+                </div>
+              </div>
+            </div>
+
+            <div class="skill-group">
+              <h3 class="skill-group-title">Social</h3>
+              <div class="skill-list">
+                <div class="skill-item">
+                  <span class="skill-name">Allure</span>
+                  <?php echo render_dots($pokemon_skills['allure'], 5, true, null, 'allure'); ?>
+                </div>
+                <div class="skill-item">
+                  <span class="skill-name">Etiquette</span>
+                  <?php echo render_dots($pokemon_skills['etiquette'], 5, true, null, 'etiquette'); ?>
+                </div>
+                <div class="skill-item">
+                  <span class="skill-name">Intimidate</span>
+                  <?php echo render_dots($pokemon_skills['intimidate'], 5, true, null, 'intimidate'); ?>
+                </div>
+                <div class="skill-item">
+                  <span class="skill-name">Perform</span>
+                  <?php echo render_dots($pokemon_skills['perform'], 5, true, null, 'perform'); ?>
+                </div>
+              </div>
+            </div>
+
+            <!-- Rimuovere la classe is-empty se ci sono abilità extra -->
+            <div class="skill-group skill-group-extra is-empty">
+              <h3 class="skill-group-title">Extra</h3>
+              <div class="skill-list">
+                <!-- es. <div class="skill-item">...</div> -->
+              </div>
+            </div>
 
           </div>
-
         </section>
 
         <section class="panel panel-wide" id="sectionAttributi">
           <div class="panel-title">
             <h2>Attributi</h2>
-
+            <span class="panel-badge">Base · Sociali</span>
           </div>
 
           <div class="attrs-layout">
 
             <div class="attrs-base">
-              <h3 class="attrs-block-title">Combattimento</h3>
+              <h3 class="attrs-block-title">Combattimento <span class="attrs-max-hint">(max <?php echo (int) $attr_dots_max; ?> pallini)</span></h3>
               <div class="combat-attrs">
                 <div class="combat-attr-card">
                   <span class="combat-attr-name">Strength</span>
-                  <?php echo render_dots($pokemon_attrs['strength'], $pokemon_attrs['limiteStrength'], false, 'attr', 'strength'); ?>
+                  <?php echo render_dots($pokemon_attrs['strength'], $attr_dots_max, false, 'attr', 'strength'); ?>
                 </div>
                 <div class="combat-attr-card">
                   <span class="combat-attr-name">Dexterity</span>
-                  <?php echo render_dots($pokemon_attrs['dexterity'], $pokemon_attrs['limiteDexterity'], false, 'attr', 'dexterity'); ?>
+                  <?php echo render_dots($pokemon_attrs['dexterity'], $attr_dots_max, false, 'attr', 'dexterity'); ?>
                 </div>
                 <div class="combat-attr-card">
                   <span class="combat-attr-name">Vitality</span>
-                  <?php echo render_dots($pokemon_attrs['vitality'], $pokemon_attrs['limiteVitality'], false, 'attr', 'vitality'); ?>
+                  <?php echo render_dots($pokemon_attrs['vitality'], $attr_dots_max, false, 'attr', 'vitality'); ?>
                 </div>
                 <div class="combat-attr-card">
                   <span class="combat-attr-name">Special</span>
-                  <?php echo render_dots($pokemon_attrs['special'], $pokemon_attrs['limiteSpecial'], false, 'attr', 'special'); ?>
+                  <?php echo render_dots($pokemon_attrs['special'], $attr_dots_max, false, 'attr', 'special'); ?>
                 </div>
                 <div class="combat-attr-card">
                   <span class="combat-attr-name">Insight</span>
-                  <?php echo render_dots($pokemon_attrs['insight'], $pokemon_attrs['limiteInsight'], false, 'attr', 'insight'); ?>
+                  <?php echo render_dots($pokemon_attrs['insight'], $attr_dots_max, false, 'attr', 'insight'); ?>
                 </div>
               </div>
             </div>
@@ -1821,6 +1567,7 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
         <section class="panel panel-wide" id="sectionCombattimento">
           <div class="panel-title">
             <h2>Combattimento</h2>
+            <span class="panel-badge">Calcolato</span>
           </div>
 
           <div class="combat-grid">
@@ -1877,27 +1624,31 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
         <section class="panel panel-wide" id="sectionEvoluzioni">
           <div class="panel-title">
             <h2>Evoluzioni</h2>
-
+            <span class="panel-badge">Catena</span>
           </div>
 
           <div class="evo-chain">
-            <?php foreach ($pokemonEvolution as $index => $evo): ?>
+            <?php foreach ($pokemon_evolutions as $index => $evo): ?>
               <?php if ($index > 0): ?>
                 <span class="evo-arrow" aria-hidden="true">→</span>
               <?php endif; ?>
               <a
                 href="pokemon-dettaglio.php?id=<?php echo (int) $evo['id']; ?>"
-                class="evo-card<?php echo $evo['id'] === $pokemonId ? ' is-current' : ''; ?>"
-                <?php echo $evo['id'] === $pokemonId ? 'aria-current="page"' : ''; ?>>
+                class="evo-card<?php echo !empty($evo['current']) ? ' is-current' : ''; ?>"
+                <?php echo !empty($evo['current']) ? 'aria-current="page"' : ''; ?>>
                 <img
-                  src="<?php echo $evo['img'] ?>"
+                  src="<?php echo htmlspecialchars(pokemon_sprite_url((int) $evo['id']), ENT_QUOTES, 'UTF-8'); ?>"
                   alt="<?php echo htmlspecialchars($evo['name'], ENT_QUOTES, 'UTF-8'); ?>"
                   loading="lazy">
                 <span class="evo-number">#<?php echo str_pad((string) $evo['id'], 3, '0', STR_PAD_LEFT); ?></span>
                 <span class="evo-name"><?php echo htmlspecialchars($evo['name'], ENT_QUOTES, 'UTF-8'); ?></span>
                 <span class="evo-method"><?php
-                                          if (!empty($evo['id']) == $pokemonId) {
+                                          if (!empty($evo['current'])) {
                                             echo 'In scheda';
+                                          } elseif (!empty($evo['method'])) {
+                                            echo htmlspecialchars($evo['method'], ENT_QUOTES, 'UTF-8');
+                                          } else {
+                                            echo '—';
                                           }
                                           ?></span>
               </a>
@@ -1910,7 +1661,7 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
     </div>
 
     <nav class="bottom-nav">
-      <a href="../pokedex.php">Dex</a>
+      <a href="pokemon.php">Dex</a>
       <a href="#sectionEvoluzioni">Evoluzioni</a>
       <a href="#">Team</a>
     </nav>
@@ -1935,273 +1686,164 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
         <p id="abilityModalEffect"></p>
       </div>
     </div>
+  </div>
 
-    <script>
-      const sheetState = <?php echo json_encode($sheet_config, JSON_UNESCAPED_UNICODE); ?>;
-      console.log(sheetState)
-      const speciesAbilities = <?php echo json_encode($pokemon_species_abilities, JSON_UNESCAPED_UNICODE); ?>;
+  <script>
+    const sheetState = <?php echo json_encode($sheet_config, JSON_UNESCAPED_UNICODE); ?>;
+    const speciesAbilities = <?php echo json_encode($pokemon_species_abilities, JSON_UNESCAPED_UNICODE); ?>;
 
-      const btnToggleEdit = document.getElementById('btnToggleEdit');
-      const editHint = document.getElementById('editHint');
-      const selectRango = document.getElementById("pokemonRank");
+    const btnToggleEdit = document.getElementById('btnToggleEdit');
+    const editHint = document.getElementById('editHint');
 
-      // Funzioni di utilità per calcolare i punti attualmente spesi sulla scheda
-      function getSpentPoints(group) {
-        return Object.values(sheetState[group]).reduce((sum, val) => sum + val, 0);
+    function getLevel(key) {
+      if (key in sheetState.attrs) return sheetState.attrs[key];
+      if (key in sheetState.skills) return sheetState.skills[key];
+      if (key in sheetState.social) return sheetState.social[key];
+      return 0;
+    }
+
+    function setLevel(key, level) {
+      if (key in sheetState.attrs) {
+        sheetState.attrs[key] = Math.max(0, Math.min(sheetState.attrDotsMax, level));
+      } else if (key in sheetState.skills) {
+        sheetState.skills[key] = Math.max(0, Math.min(5, level));
+      } else if (key in sheetState.social) {
+        sheetState.social[key] = Math.max(0, Math.min(5, level));
       }
+    }
 
-      function getLevel(key) {
-        if (key in sheetState.attrs) return sheetState.attrs[key];
-        if (key in sheetState.skills) return sheetState.skills[key];
-        if (key in sheetState.social) return sheetState.social[key];
-        return 0;
-      }
+    function updateDotsUI(key) {
+      const wrap = document.querySelector('[data-editable-dots][data-key="' + key + '"]');
+      if (!wrap) return;
+      const level = getLevel(key);
+      const max = parseInt(wrap.dataset.max, 10);
+      wrap.dataset.level = level;
+      wrap.setAttribute('aria-label', level + ' su ' + max);
+      wrap.querySelectorAll('.dot').forEach((dot, i) => {
+        dot.classList.toggle('active', i < level);
+      });
+    }
 
-      // Logica di controllo dinamica dei limiti dei Ranghi
-      function setLevel(key, level) {
-        const currentRankData = sheetState.rank_config[sheetState.rank];
-        if (!currentRankData) return false;
+    function recalcCombat() {
+      const a = sheetState.attrs;
+      const s = sheetState.skills;
+      const values = {
+        hp: sheetState.baseHp + a.vitality,
+        will: 2 + a.insight,
+        init: a.dexterity + s.alert,
+        evasion: a.dexterity + s.evasion,
+        clashPhys: a.strength + s.brawl,
+        clashSpec: a.special + s.brawl,
+        def: a.vitality,
+        sdef: a.insight,
+      };
+      Object.entries(values).forEach(([key, val]) => {
+        const el = document.querySelector('[data-combat="' + key + '"]');
+        if (el) el.textContent = val;
+      });
+    }
 
-        // --- CASO 1: CONOSCENZE / ABILITÀ ---
-        if (key in sheetState.skills) {
-          const currentLevel = sheetState.skills[key];
-          const diff = level - currentLevel;
+    function setEditMode(on) {
+      document.body.classList.toggle('is-editing', on);
+      btnToggleEdit.classList.toggle('is-active', on);
+      btnToggleEdit.setAttribute('aria-pressed', on ? 'true' : 'false');
+      btnToggleEdit.textContent = on ? 'Fine modifica' : 'Modifica scheda';
+      editHint.hidden = !on;
+    }
 
-          // Controllo limite sul SINGOLO livello della conoscenza (limiteLivelloConoscenza)
-          if (level > currentRankData.skill_level_cap) {
-            alert(`Il livello massimo per una singola Abilità al rango ${sheetState.rank.toUpperCase()} è ${currentRankData.skill_level_cap}!`);
-            return false;
-          }
+    btnToggleEdit.addEventListener('click', () => {
+      setEditMode(!document.body.classList.contains('is-editing'));
+    });
 
-          // Controllo limite GLOBALE dei punti conoscenza spendibili
-          if (diff > 0) {
-            const totalSpent = getSpentPoints('skills');
-            if (totalSpent + diff > currentRankData.max_skills) {
-              alert(`Hai esaurito i punti Abilità globali per il rango ${sheetState.rank.toUpperCase()}! (Max: ${currentRankData.max_skills})`);
-              return false;
-            }
-          }
-          sheetState.skills[key] = Math.max(0, Math.min(5, level));
-        }
-
-        // --- CASO 2: ATTRIBUTI FISICI ---
-        else if (key in sheetState.attrs) {
-          // Escludiamo le chiavi di "limite" dai conteggi se presenti
-          if (key.startsWith('limite')) return false;
-
-          const currentLevel = sheetState.attrs[key];
-          const diff = level - currentLevel;
-
-          if (diff > 0) {
-            const totalSpent = Object.keys(sheetState.attrs)
-              .filter(k => !k.startsWith('limite'))
-              .reduce((sum, k) => sum + sheetState.attrs[k], 0);
-
-            // Calcoliamo i punti base nativi del Pokémon (la somma iniziale degli attributi a Rango Starter)
-            // Nota: Nel tuo DB a Rango Starter gli attributi aggiuntivi sono 0, quindi tutto ciò che eccede la base è un bonus
-            const baseTotal = sheetState.rank_config['starter'] ? 0 : 0; // Gestibile se hai una somma base fissa
-
-            if (totalSpent + diff > currentRankData.max_attr + 10) { // +10 ipotizzando 2 punti base automatici per i 5 attributi
-              alert(`Non hai abbastanza punti Attributo per il rango ${sheetState.rank.toUpperCase()}!`);
-              return false;
-            }
-          }
-
-          // Controllo che non superi il limite massimo specifico della specie (es. massimoVitality)
-          const limitKey = 'limite' + key.charAt(0).toUpperCase() + key.slice(1);
-          const maxLimit = sheetState.attrs[limitKey] || 5;
-          if (level > maxLimit) {
-            alert(`Questo Pokémon non può superare il valore di ${maxLimit} in questo Attributo.`);
-            return false;
-          }
-
-          sheetState.attrs[key] = Math.max(0, level);
-        }
-
-        // --- CASO 3: ATTRIBUTI SOCIALI ---
-        else if (key in sheetState.social) {
-          const currentLevel = sheetState.social[key];
-          const diff = level - currentLevel;
-
-          if (diff > 0) {
-            // Calcola il totale attuale (Sottraiamo 5 perché ogni attributo parte da 1 di base fissa)
-            const totalSpent = getSpentPoints('social') - 5;
-            if (totalSpent + diff > currentRankData.max_social) {
-              alert(`Hai esaurito i punti Sociali aggiuntivi per il rango ${sheetState.rank.toUpperCase()}! (Max Bonus: ${currentRankData.max_social})`);
-              return false;
-            }
-          }
-          sheetState.social[key] = Math.max(0, Math.min(5, level));
-        }
-
-        return true;
-      }
-
-      function updateDotsUI(key) {
-        const wrap = document.querySelector('[data-editable-dots][data-key="' + key + '"]');
-        if (!wrap) return;
-        const level = getLevel(key);
-        const max = parseInt(wrap.dataset.max, 10);
-        wrap.dataset.level = level;
-        wrap.setAttribute('aria-label', level + ' su ' + max);
-        wrap.querySelectorAll('.dot').forEach((dot, i) => {
-          dot.classList.toggle('active', i < level);
-        });
-
-        updateHintText();
-      }
-
-      // Aggiorna il testo informativo mostrando i tre tetti di spesa separati
-      function updateHintText() {
+    document.querySelectorAll('[data-editable-dots]').forEach((wrap) => {
+      wrap.addEventListener('click', (e) => {
         if (!document.body.classList.contains('is-editing')) return;
-        const currentRankData = sheetState.rank_config[sheetState.rank];
-        if (!currentRankData) return;
-
-        const spentSkills = getSpentPoints('skills');
-        const spentSocial = getSpentPoints('social') - 5; // Rimuoviamo la base di 1 punto per card
-
-        editHint.innerHTML = `<strong>Rango attuale: ${sheetState.rank.toUpperCase()}</strong><br>` +
-          `Punti Conoscenza spesi: ${spentSkills}/${currentRankData.max_skills} (Limite Singolo: ${currentRankData.skill_level_cap})<br>` +
-          `Punti Sociali extra spesi: ${spentSocial}/${currentRankData.max_social}`;
-      }
-
-      function recalcCombat() {
-        const a = sheetState.attrs;
-        const s = sheetState.skills;
-        const values = {
-          hp: sheetState.baseHp + a.vitality,
-          will: 2 + a.insight,
-          init: a.dexterity + (s.alert || 0),
-          evasion: a.dexterity + (s.evasion || 0),
-          clashPhys: a.strength + (s.brawl || 0),
-          clashSpec: a.special + (s.brawl || 0),
-          def: a.vitality,
-          sdef: a.insight,
-        };
-        Object.entries(values).forEach(([key, val]) => {
-          const el = document.querySelector('[data-combat="' + key + '"]');
-          if (el) el.textContent = val;
-        });
-      }
-
-      function setEditMode(on) {
-        document.body.classList.toggle('is-editing', on);
-        btnToggleEdit.classList.toggle('is-active', on);
-        console.log(on)
-        if (on == true) {
-          selectRango.setAttribute("disabled", true);
-        } else {
-          selectRango.removeAttribute("disabled", true);
-        }
-        btnToggleEdit.setAttribute('aria-pressed', on ? 'true' : 'false');
-        btnToggleEdit.textContent = on ? 'Fine modifica' : 'Modifica scheda';
-        editHint.hidden = !on;
-        if (on) updateHintText();
-      }
-
-      btnToggleEdit.addEventListener('click', () => {
-        setEditMode(!document.body.classList.contains('is-editing'));
-      });
-
-      document.querySelectorAll('[data-editable-dots]').forEach((wrap) => {
-        wrap.addEventListener('click', (e) => {
-          if (!document.body.classList.contains('is-editing')) return;
-          const dot = e.target.closest('.dot[data-dot-index]');
-          if (!dot) return;
-
-          const key = wrap.dataset.key;
-          const index = parseInt(dot.dataset.dotIndex, 10);
-          const current = getLevel(key);
-          const targetLevel = (current === index) ? index - 1 : index;
-
-          const success = setLevel(key, targetLevel);
-
-          if (success !== false) {
-            updateDotsUI(key);
-            if (key in sheetState.attrs || key in sheetState.skills) {
-              recalcCombat();
-            }
-          }
-        });
-      });
-
-      document.getElementById('btnAddTeam')?.addEventListener('click', () => {
-        alert('Funzione «Aggiungi al Team» — da collegare al salvataggio.');
-      });
-
-      const rankSelect = document.getElementById('pokemonRank');
-      if (rankSelect) {
-        rankSelect.addEventListener('change', () => {
-          sheetState.rank = rankSelect.value;
-          updateHintText();
-        });
-      }
-
-      recalcCombat();
-
-      const abilityModal = document.getElementById('abilityModal');
-      const abilityModalTitle = document.getElementById('abilityModalTitle');
-      const abilityModalSubtitle = document.getElementById('abilityModalSubtitle');
-      const abilityModalDescription = document.getElementById('abilityModalDescription');
-      const abilityModalEffect = document.getElementById('abilityModalEffect');
-      const abilityModalClose = document.getElementById('abilityModalClose');
-      let abilityModalTrigger = null;
-
-      const abilitiesBySlug = Object.fromEntries(
-        speciesAbilities.map((ability) => [ability.nome, ability])
-      );
-
-      console.log(abilitiesBySlug)
-
-      function openAbilityModal(nome, trigger) {
-        const ability = abilitiesBySlug[nome];
-        console.log(ability)
-        if (!ability || !abilityModal) return;
-
-        abilityModalTitle.textContent = ability.nomeItaliano;
-        abilityModalSubtitle.textContent = ability.nome;
-        abilityModalDescription.textContent = ability.descrizione;
-        abilityModalEffect.textContent = ability.effettiAggiuntivi;
-
-        abilityModal.hidden = false;
-        abilityModal.classList.add('is-open');
-        document.body.style.overflow = 'hidden';
-        abilityModalTrigger = trigger || null;
-        abilityModalClose.focus();
-      }
-
-      function closeAbilityModal() {
-        if (!abilityModal) return;
-
-        abilityModal.classList.remove('is-open');
-        abilityModal.hidden = true;
-        document.body.style.overflow = '';
-        if (abilityModalTrigger) {
-          abilityModalTrigger.focus();
-          abilityModalTrigger = null;
-        }
-      }
-
-      document.querySelectorAll('.ability-info-btn').forEach((btn) => {
-        btn.addEventListener('click', () => {
-          openAbilityModal(btn.dataset.ability, btn);
-        });
-      });
-
-      abilityModalClose?.addEventListener('click', closeAbilityModal);
-
-      abilityModal?.addEventListener('click', (e) => {
-        if (e.target === abilityModal) {
-          closeAbilityModal();
+        const dot = e.target.closest('.dot[data-dot-index]');
+        if (!dot) return;
+        const key = wrap.dataset.key;
+        const index = parseInt(dot.dataset.dotIndex, 10);
+        const current = getLevel(key);
+        setLevel(key, current === index ? index - 1 : index);
+        updateDotsUI(key);
+        if (key in sheetState.attrs || key in sheetState.skills) {
+          recalcCombat();
         }
       });
+    });
 
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && abilityModal?.classList.contains('is-open')) {
-          closeAbilityModal();
-        }
+    document.getElementById('btnAddTeam')?.addEventListener('click', () => {
+      alert('Funzione «Aggiungi al Team» — da collegare al salvataggio.');
+    });
+
+    const rankSelect = document.getElementById('pokemonRank');
+    if (rankSelect) {
+      rankSelect.addEventListener('change', () => {
+        sheetState.rank = rankSelect.value;
       });
-    </script>
+    }
+
+    recalcCombat();
+
+    const abilityModal = document.getElementById('abilityModal');
+    const abilityModalTitle = document.getElementById('abilityModalTitle');
+    const abilityModalSubtitle = document.getElementById('abilityModalSubtitle');
+    const abilityModalDescription = document.getElementById('abilityModalDescription');
+    const abilityModalEffect = document.getElementById('abilityModalEffect');
+    const abilityModalClose = document.getElementById('abilityModalClose');
+    let abilityModalTrigger = null;
+
+    const abilitiesBySlug = Object.fromEntries(
+      speciesAbilities.map((ability) => [ability.slug, ability])
+    );
+
+    function openAbilityModal(slug, trigger) {
+      const ability = abilitiesBySlug[slug];
+      if (!ability || !abilityModal) return;
+
+      abilityModalTitle.textContent = ability.name_it;
+      abilityModalSubtitle.textContent = ability.name_en;
+      abilityModalDescription.textContent = ability.description;
+      abilityModalEffect.textContent = ability.effect;
+
+      abilityModal.hidden = false;
+      abilityModal.classList.add('is-open');
+      document.body.style.overflow = 'hidden';
+      abilityModalTrigger = trigger || null;
+      abilityModalClose.focus();
+    }
+
+    function closeAbilityModal() {
+      if (!abilityModal) return;
+
+      abilityModal.classList.remove('is-open');
+      abilityModal.hidden = true;
+      document.body.style.overflow = '';
+      if (abilityModalTrigger) {
+        abilityModalTrigger.focus();
+        abilityModalTrigger = null;
+      }
+    }
+
+    document.querySelectorAll('.ability-info-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        openAbilityModal(btn.dataset.ability, btn);
+      });
+    });
+
+    abilityModalClose?.addEventListener('click', closeAbilityModal);
+
+    abilityModal?.addEventListener('click', (e) => {
+      if (e.target === abilityModal) {
+        closeAbilityModal();
+      }
+    });
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && abilityModal?.classList.contains('is-open')) {
+        closeAbilityModal();
+      }
+    });
+  </script>
 
 </body>
 

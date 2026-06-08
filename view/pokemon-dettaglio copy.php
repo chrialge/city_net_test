@@ -3,7 +3,9 @@
 require_once __DIR__ . '/../assets/controller/pokemon.php';
 require_once __DIR__ . '/../assets/controller/conoscenze.php';
 require_once __DIR__ . '/../assets/controller/categorie_conoscenze.php';
+require_once __DIR__ . '/../assets/controller/ranghi.php';
 require_once __DIR__ . '/../assets/helper/function.php';
+
 
 
 function render_dots(
@@ -47,6 +49,11 @@ $pokemon = $pokemonId ? getPokemonById($pokemonId) : null;
 
 
 $pokemonEvolution = getPokemonChainEvolution($pokemonId);
+$ranghi = getAllRanghi();
+echo '<pre>';
+print_r($ranghi);
+echo '</pre>';
+
 
 
 
@@ -177,6 +184,7 @@ function type_palette(array $types): array
   $secondary = $colors[1] ?? $primary;
   $tertiary = $colors[2] ?? $secondary;
   $accent = $tertiary;
+  $accentExplicit = "";
   // Se è stato fornito esplicitamente un colore testo (solo da tipologie con colori), usalo come priorità
   $text = $explicitText !== '' ? $explicitText : (is_dark_color($primary) ? '#ffffff' : '#111827');
   $accent_foreground = $accentExplicit !== '' ? $accentExplicit : (is_dark_color($accent) ? '#ffffff' : '#111827');
@@ -321,6 +329,48 @@ $sheet_config = [
   'social' => $pokemon_social,
 ];
 
+// Calcolo dei massimali cumulativi in base al Rango attuale del Pokémon
+$max_attributi_cumulati = 0;
+$max_sociali_cumulati = 0;
+$max_conoscenze_cumulati = 0;
+$limite_singola_conoscenza = 1;
+
+$js_rank_config = [];
+
+foreach ($ranghi as $rango) {
+  $key = strtolower($rango['nome']);
+
+  // Accumuliamo i punti fino al rango corrente del Pokémon
+  $max_attributi_cumulati += $rango['attributi'];
+  $max_sociali_cumulati += $rango['attributiSociali'];
+  $max_conoscenze_cumulati = $rango['puntiConoscenza'];
+
+  // Salviamo la configurazione progressiva da passare a JS
+  $js_rank_config[$key] = [
+    'max_attr' => $max_attributi_cumulati,
+    'max_social' => $max_sociali_cumulati,
+    'max_skills' => $max_conoscenze_cumulati,
+    'skill_level_cap' => $rango['limiteLivelloConoscenza']
+  ];
+
+  if ($pokemon_rank === $key) {
+    $limite_singola_conoscenza = $rango['limiteLivelloConoscenza'];
+    break; // Abbiamo raggiunto il rango del Pokémon, fermiamo l'accumulo per il calcolo PHP iniziale
+  }
+}
+
+// Struttura di configurazione aggiornata per JavaScript
+$sheet_config = [
+  'baseHp' => $base_hp,
+  'rank' => $pokemon_rank,
+  'attrs' => $pokemon_attrs,
+  'skills' => $pokemon_skills,
+  'social' => $pokemon_social,
+  'rank_config' => $js_rank_config // Passiamo tutta la struttura cumulata a JS
+];
+
+
+
 
 function pokemon_sprite_url(int $id): string
 {
@@ -329,6 +379,16 @@ function pokemon_sprite_url(int $id): string
 }
 
 $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
+
+
+$pokemon_species_abilities = $pokemon["abilita"];
+
+$pokemon_dex_min = 1;
+$pokemon_dex_max = 1025;
+
+
+$pokemon_prev_id = $pokemonId > $pokemon_dex_min ? $pokemonId - 1 : null;
+$pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
 
 ?>
 <!DOCTYPE html>
@@ -377,7 +437,7 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
     }
 
     .detail-header {
-      position: sticky;
+
       top: 0;
       z-index: 10;
       background: linear-gradient(180deg, #ffffff 0%, var(--type-bg) 55%, var(--type-bg-deep) 100%);
@@ -407,6 +467,54 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
       align-items: center;
       text-align: center;
       padding-top: 4px;
+    }
+
+    .hero-image-nav {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      width: 100%;
+      max-width: min(340px, 94vw);
+      margin-bottom: 8px;
+    }
+
+    .hero-nav-btn {
+      flex-shrink: 0;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      border: 2px solid var(--type-accent-dark);
+      background: rgba(255, 255, 255, 0.9);
+      color: var(--type-accent-dark);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      font-size: 26px;
+      font-weight: bold;
+      line-height: 1;
+      padding: 0 0 2px;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(234, 179, 8, 0.2);
+      transition: background 0.15s, color 0.15s, border-color 0.15s, transform 0.15s;
+    }
+
+    .hero-nav-btn:hover,
+    .hero-nav-btn:focus-visible {
+      background: var(--type-accent);
+      border-color: var(--type-accent);
+      color: #fff;
+      outline: none;
+      transform: scale(1.05);
+    }
+
+    .hero-nav-btn.is-disabled {
+      opacity: 0.35;
+      pointer-events: none;
+      cursor: default;
+      box-shadow: none;
+      transform: none;
     }
 
     .hero-image {
@@ -1255,6 +1363,17 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
         grid-column: 1 / -1;
       }
 
+
+      .hero-image-nav {
+        max-width: 380px;
+        gap: 10px;
+      }
+
+      .hero-nav-btn {
+        width: 44px;
+        height: 44px;
+      }
+
       .hero-image {
         width: 260px;
         height: 260px;
@@ -1287,6 +1406,177 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
         border-radius: 0 0 24px 24px;
       }
     }
+
+
+    .species-abilities {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 6px 4px;
+      font-size: 15px;
+      font-weight: bold;
+      color: #111827;
+    }
+
+    .species-ability {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .species-ability-sep {
+      color: #9ca3af;
+      font-weight: normal;
+      margin: 0 2px;
+    }
+
+    .ability-info-btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 18px;
+      height: 18px;
+      padding: 0;
+      border: 1.5px solid var(--type-accent-dark);
+      border-radius: 50%;
+      background: #fffbeb;
+      color: var(--type-accent-dark);
+      font-size: 11px;
+      font-weight: bold;
+      font-style: italic;
+      font-family: Georgia, 'Times New Roman', serif;
+      line-height: 1;
+      cursor: pointer;
+      flex-shrink: 0;
+      transition: background 0.15s, color 0.15s, border-color 0.15s;
+    }
+
+    .ability-info-btn:hover,
+    .ability-info-btn:focus-visible {
+      background: var(--type-accent);
+      border-color: var(--type-accent);
+      color: #fff;
+      outline: none;
+    }
+
+    .ability-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+      background: rgba(17, 24, 39, 0.55);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity 0.2s, visibility 0.2s;
+    }
+
+    .ability-modal.is-open {
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .ability-modal-dialog {
+      width: min(420px, 100%);
+      max-height: min(85vh, 560px);
+      overflow: auto;
+      background: #ffffff;
+      border-radius: 18px;
+      border: 2px solid var(--type-accent);
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
+      padding: 20px 18px 18px;
+      transform: translateY(12px) scale(0.98);
+      transition: transform 0.2s;
+    }
+
+    .ability-modal.is-open .ability-modal-dialog {
+      transform: translateY(0) scale(1);
+    }
+
+    .ability-modal-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      margin-bottom: 14px;
+    }
+
+    .ability-modal-title {
+      margin: 0;
+      font-size: 20px;
+      color: #111827;
+      line-height: 1.2;
+    }
+
+    .ability-modal-subtitle {
+      margin: 4px 0 0;
+      font-size: 14px;
+      color: #6b7280;
+      font-weight: normal;
+    }
+
+    .ability-modal-close {
+      flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: #f3f4f6;
+      color: #374151;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .ability-modal-close:hover,
+    .ability-modal-close:focus-visible {
+      background: #e5e7eb;
+      outline: none;
+    }
+
+    .ability-modal-section {
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #f3f4f6;
+    }
+
+    .ability-modal-section:first-of-type {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: none;
+    }
+
+    .ability-modal-section h3 {
+      margin: 0 0 6px;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      color: #6b7280;
+    }
+
+    .ability-modal-section p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.5;
+      color: #1f2937;
+    }
+
+    .section-alert-banner {
+      margin-top: 14px;
+      padding: 12px 14px;
+      background: rgba(255, 255, 255, 0.6);
+      border-left: 4px solid var(--type-accent);
+      border-radius: 8px;
+      font-size: 13px;
+      line-height: 1.45;
+      color: var(--type-text);
+    }
+
+    .section-alert-banner strong {
+      color: var(--type-accent-dark);
+    }
   </style>
 </head>
 
@@ -1296,10 +1586,28 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
 
     <header class="detail-header" style="<?= htmlspecialchars($heroStyle, ENT_QUOTES, 'UTF-8'); ?>">
       <div class="hero-center">
-        <img
-          class="hero-image"
-          src="<?= $pokemonApi['img'] ?? '' ?>"
-          alt="Immagine ufficiale di <?= htmlspecialchars($pokemon['nome'], ENT_QUOTES, 'UTF-8') ?>">
+        <div class="hero-image-nav">
+          <?php if ($pokemon_prev_id !== null): ?>
+            <a
+              href="pokemon-dettaglio.php?id=<?php echo (int) $pokemon_prev_id; ?>"
+              class="hero-nav-btn hero-nav-prev"
+              aria-label="Pokémon precedente">&lsaquo;</a>
+          <?php else: ?>
+            <span class="hero-nav-btn hero-nav-prev is-disabled" aria-hidden="true">&lsaquo;</span>
+          <?php endif; ?>
+          <img
+            class="hero-image"
+            src="<?= $pokemonApi['img'] ?? '' ?>"
+            alt="Immagine ufficiale di <?= htmlspecialchars($pokemon['nome'], ENT_QUOTES, 'UTF-8') ?>">
+          <?php if ($pokemon_next_id !== null): ?>
+            <a
+              href="pokemon-dettaglio.php?id=<?php echo (int) $pokemon_next_id; ?>"
+              class="hero-nav-btn hero-nav-next"
+              aria-label="Pokémon successivo">&rsaquo;</a>
+          <?php else: ?>
+            <span class="hero-nav-btn hero-nav-next is-disabled" aria-hidden="true">&rsaquo;</span>
+          <?php endif; ?>
+        </div>
         <p class="pokemon-number"><?= $pokemon['numeroPokedex'] ?></p>
         <h1><?= htmlspecialchars($pokemon['nome'], ENT_QUOTES, 'UTF-8') ?></h1>
         <div class="type-list">
@@ -1340,8 +1648,19 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
             <div class="data-grid">
               <div class="data-item full">
                 <strong>Abilità specie</strong>
-                <span><?php foreach ($pokemon['abilita'] as $ability): ?>
+                <span><?php foreach ($pokemon['abilita'] as $index => $ability): ?>
                     <?= $ability['nomeItaliano'] ?>
+                    <?php if ($index > 0): ?>
+                      <span class="species-ability-sep" aria-hidden="true">/</span>
+                    <?php endif; ?>
+                    <span class="species-ability">
+                      <?php echo htmlspecialchars($ability['nome'], ENT_QUOTES, 'UTF-8'); ?>
+                      <button
+                        type="button"
+                        class="ability-info-btn"
+                        data-ability="<?php echo htmlspecialchars($ability['nome'], ENT_QUOTES, 'UTF-8'); ?>"
+                        aria-label="Info su <?php echo htmlspecialchars($ability['nomeItaliano'], ENT_QUOTES, 'UTF-8'); ?>">i</button>
+                    </span>
                   <?php endforeach; ?></span>
               </div>
 
@@ -1400,8 +1719,12 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
             <h2>Abilità</h2>
 
           </div>
+          <div class="section-alert-banner">
+            <strong>Info Abilità:</strong> Rappresentano il bagaglio di competenze e conoscenze del Pokémon. Il livello massimo raggiungibile su una singola abilità e i punti totali spendibili dipendono strettamente dal suo <em>Rango attuale</em>.
+          </div>
 
           <div class="skill-groups">
+
 
             <?php foreach ($categorieConoscenze as $categoria): ?>
               <?php if ($categoria['visibilePokemon'] == 1 && count($categoria['conoscenze']) > 0): ?>
@@ -1592,164 +1915,287 @@ $pokemonApi = getPokemonDetailFromPokeAPI($pokemonId);
 
   </main>
 
-  <script>
-    const sheetState = <?php echo json_encode($sheet_config, JSON_UNESCAPED_UNICODE); ?>;
+  <div class="ability-modal" id="abilityModal" role="dialog" aria-modal="true" aria-labelledby="abilityModalTitle" hidden>
+    <div class="ability-modal-dialog">
+      <div class="ability-modal-header">
+        <div>
+          <h2 class="ability-modal-title" id="abilityModalTitle"></h2>
+          <p class="ability-modal-subtitle" id="abilityModalSubtitle"></p>
+        </div>
+        <button type="button" class="ability-modal-close" id="abilityModalClose" aria-label="Chiudi">&times;</button>
+      </div>
+      <div class="ability-modal-section">
+        <h3>Descrizione</h3>
+        <p id="abilityModalDescription"></p>
+      </div>
+      <div class="ability-modal-section">
+        <h3>Effetti aggiuntivi</h3>
+        <p id="abilityModalEffect"></p>
+      </div>
+    </div>
 
-    // 1. Definisci i limiti globali di punti abilità per ciascun rango
-    const RANK_SKILL_LIMITS = {
-      'starter': 5,
-      'beginner': 11,
-      'amateur': 14,
-      'ace': 16,
-      'pro': 17,
-      'master': 18,
-      'champion': 20
-    };
+    <script>
+      const sheetState = <?php echo json_encode($sheet_config, JSON_UNESCAPED_UNICODE); ?>;
+      const speciesAbilities = <?php echo json_encode($pokemon_species_abilities, JSON_UNESCAPED_UNICODE); ?>;
 
-    const btnToggleEdit = document.getElementById('btnToggleEdit');
-    const editHint = document.getElementById('editHint');
+      const btnToggleEdit = document.getElementById('btnToggleEdit');
+      const editHint = document.getElementById('editHint');
+      const selectRango = document.getElementById("pokemonRank");
 
-    function getLevel(key) {
-      if (key in sheetState.attrs) return sheetState.attrs[key];
-      if (key in sheetState.skills) return sheetState.skills[key];
-      if (key in sheetState.social) return sheetState.social[key];
-      return 0;
-    }
-
-    // Funzione per calcolare quanti punti totali sono stati spesi attualmente nelle conoscenze
-    function getTotalSpentSkills() {
-      return Object.values(sheetState.skills).reduce((sum, value) => sum + value, 0);
-    }
-
-    // 2. Logica di impostazione del livello con controllo del tetto massimo
-    function setLevel(key, level) {
-      if (key in sheetState.attrs) {
-        // Nota: nel tuo script originale c'era un refuso "sheetState.attrDotsMax", 
-        // qui usiamo il limite massimo della card per sicurezza
-        sheetState.attrs[key] = Math.max(0, level);
-      } else if (key in sheetState.skills) {
-        const currentLevel = sheetState.skills[key];
-        const diff = level - currentLevel;
-
-        // Se l'utente sta provando ad aumentare i pallini, controlliamo il limite globale
-        if (diff > 0) {
-          const currentTotal = getTotalSpentSkills();
-          const maxAllowed = RANK_SKILL_LIMITS[sheetState.rank] || 999;
-
-          if (currentTotal + diff > maxAllowed) {
-            // Calcoliamo quanti punti rimangono effettivamente spendibili
-            const remainingPool = maxAllowed - currentTotal;
-            if (remainingPool > 0) {
-              sheetState.skills[key] = currentLevel + remainingPool;
-            } else {
-              alert(`Hai esaurito i punti Abilità per il rango ${sheetState.rank.toUpperCase()}! (Max: ${maxAllowed})`);
-              return false; // Rifiuta l'incremento
-            }
-            return true;
-          }
-        }
-
-        sheetState.skills[key] = Math.max(0, Math.min(5, level));
-      } else if (key in sheetState.social) {
-        sheetState.social[key] = Math.max(0, Math.min(5, level));
+      // Funzioni di utilità per calcolare i punti attualmente spesi sulla scheda
+      function getSpentPoints(group) {
+        return Object.values(sheetState[group]).reduce((sum, val) => sum + val, 0);
       }
-      return true;
-    }
 
-    function updateDotsUI(key) {
-      const wrap = document.querySelector('[data-editable-dots][data-key="' + key + '"]');
-      if (!wrap) return;
-      const level = getLevel(key);
-      const max = parseInt(wrap.dataset.max, 10);
-      wrap.dataset.level = level;
-      wrap.setAttribute('aria-label', level + ' su ' + max);
-      wrap.querySelectorAll('.dot').forEach((dot, i) => {
-        dot.classList.toggle('active', i < level);
-      });
+      function getLevel(key) {
+        if (key in sheetState.attrs) return sheetState.attrs[key];
+        if (key in sheetState.skills) return sheetState.skills[key];
+        if (key in sheetState.social) return sheetState.social[key];
+        return 0;
+      }
 
-      // Aggiorna la barra di aiuto con i punti rimanenti se siamo in modifica
-      updateHintText();
-    }
+      // Logica di controllo dinamica dei limiti dei Ranghi
+      function setLevel(key, level) {
+        const currentRankData = sheetState.rank_config[sheetState.rank];
+        if (!currentRankData) return false;
 
-    // Mostra all'utente quanti punti ha ancora a disposizione in tempo reale
-    function updateHintText() {
-      if (!document.body.classList.contains('is-editing')) return;
-      const currentTotal = getTotalSpentSkills();
-      const maxAllowed = RANK_SKILL_LIMITS[sheetState.rank] || 0;
-      const rimasti = maxAllowed - currentTotal;
-      editHint.textContent = `Tocca i pallini per modificare. Punti Abilità spesi: ${currentTotal}/${maxAllowed} (Rimasti: ${rimasti >= 0 ? rimasti : 0}).`;
-    }
+        // --- CASO 1: CONOSCENZE / ABILITÀ ---
+        if (key in sheetState.skills) {
+          const currentLevel = sheetState.skills[key];
+          const diff = level - currentLevel;
 
-    function recalcCombat() {
-      const a = sheetState.attrs;
-      const s = sheetState.skills;
-      const values = {
-        hp: sheetState.baseHp + a.vitality,
-        will: 2 + a.insight,
-        init: a.dexterity + (s.alert || 0),
-        evasion: a.dexterity + (s.evasion || 0),
-        clashPhys: a.strength + (s.brawl || 0),
-        clashSpec: a.special + (s.brawl || 0),
-        def: a.vitality,
-        sdef: a.insight,
-      };
-      Object.entries(values).forEach(([key, val]) => {
-        const el = document.querySelector('[data-combat="' + key + '"]');
-        if (el) el.textContent = val;
-      });
-    }
-
-    function setEditMode(on) {
-      document.body.classList.toggle('is-editing', on);
-      btnToggleEdit.classList.toggle('is-active', on);
-      btnToggleEdit.setAttribute('aria-pressed', on ? 'true' : 'false');
-      btnToggleEdit.textContent = on ? 'Fine modifica' : 'Modifica scheda';
-      editHint.hidden = !on;
-      if (on) updateHintText();
-    }
-
-    btnToggleEdit.addEventListener('click', () => {
-      setEditMode(!document.body.classList.contains('is-editing'));
-    });
-
-    // 3. Listener dei click aggiornato che interrompe l'azione se setLevel fallisce
-    document.querySelectorAll('[data-editable-dots]').forEach((wrap) => {
-      wrap.addEventListener('click', (e) => {
-        if (!document.body.classList.contains('is-editing')) return;
-        const dot = e.target.closest('.dot[data-dot-index]');
-        if (!dot) return;
-
-        const key = wrap.dataset.key;
-        const index = parseInt(dot.dataset.dotIndex, 10);
-        const current = getLevel(key);
-        const targetLevel = (current === index) ? index - 1 : index;
-
-        // Esegue setLevel; se restituisce false (limite superato), non aggiorna la UI
-        const success = setLevel(key, targetLevel);
-
-        if (success !== false) {
-          updateDotsUI(key);
-          if (key in sheetState.attrs || key in sheetState.skills) {
-            recalcCombat();
+          // Controllo limite sul SINGOLO livello della conoscenza (limiteLivelloConoscenza)
+          if (level > currentRankData.skill_level_cap) {
+            alert(`Il livello massimo per una singola Abilità al rango ${sheetState.rank.toUpperCase()} è ${currentRankData.skill_level_cap}!`);
+            return false;
           }
+
+          // Controllo limite GLOBALE dei punti conoscenza spendibili
+          if (diff > 0) {
+            const totalSpent = getSpentPoints('skills');
+            if (totalSpent + diff > currentRankData.max_skills) {
+              alert(`Hai esaurito i punti Abilità globali per il rango ${sheetState.rank.toUpperCase()}! (Max: ${currentRankData.max_skills})`);
+              return false;
+            }
+          }
+          sheetState.skills[key] = Math.max(0, Math.min(5, level));
+        }
+
+        // --- CASO 2: ATTRIBUTI FISICI ---
+        else if (key in sheetState.attrs) {
+          // Escludiamo le chiavi di "limite" dai conteggi se presenti
+          if (key.startsWith('limite')) return false;
+
+          const currentLevel = sheetState.attrs[key];
+          const diff = level - currentLevel;
+
+          if (diff > 0) {
+            const totalSpent = Object.keys(sheetState.attrs)
+              .filter(k => !k.startsWith('limite'))
+              .reduce((sum, k) => sum + sheetState.attrs[k], 0);
+
+            // Calcoliamo i punti base nativi del Pokémon (la somma iniziale degli attributi a Rango Starter)
+            // Nota: Nel tuo DB a Rango Starter gli attributi aggiuntivi sono 0, quindi tutto ciò che eccede la base è un bonus
+            const baseTotal = sheetState.rank_config['starter'] ? 0 : 0; // Gestibile se hai una somma base fissa
+
+            if (totalSpent + diff > currentRankData.max_attr + 10) { // +10 ipotizzando 2 punti base automatici per i 5 attributi
+              alert(`Non hai abbastanza punti Attributo per il rango ${sheetState.rank.toUpperCase()}!`);
+              return false;
+            }
+          }
+
+          // Controllo che non superi il limite massimo specifico della specie (es. massimoVitality)
+          const limitKey = 'limite' + key.charAt(0).toUpperCase() + key.slice(1);
+          const maxLimit = sheetState.attrs[limitKey] || 5;
+          if (level > maxLimit) {
+            alert(`Questo Pokémon non può superare il valore di ${maxLimit} in questo Attributo.`);
+            return false;
+          }
+
+          sheetState.attrs[key] = Math.max(0, level);
+        }
+
+        // --- CASO 3: ATTRIBUTI SOCIALI ---
+        else if (key in sheetState.social) {
+          const currentLevel = sheetState.social[key];
+          const diff = level - currentLevel;
+
+          if (diff > 0) {
+            // Calcola il totale attuale (Sottraiamo 5 perché ogni attributo parte da 1 di base fissa)
+            const totalSpent = getSpentPoints('social') - 5;
+            if (totalSpent + diff > currentRankData.max_social) {
+              alert(`Hai esaurito i punti Sociali aggiuntivi per il rango ${sheetState.rank.toUpperCase()}! (Max Bonus: ${currentRankData.max_social})`);
+              return false;
+            }
+          }
+          sheetState.social[key] = Math.max(0, Math.min(5, level));
+        }
+
+        return true;
+      }
+
+      function updateDotsUI(key) {
+        const wrap = document.querySelector('[data-editable-dots][data-key="' + key + '"]');
+        if (!wrap) return;
+        const level = getLevel(key);
+        const max = parseInt(wrap.dataset.max, 10);
+        wrap.dataset.level = level;
+        wrap.setAttribute('aria-label', level + ' su ' + max);
+        wrap.querySelectorAll('.dot').forEach((dot, i) => {
+          dot.classList.toggle('active', i < level);
+        });
+
+        updateHintText();
+      }
+
+      // Aggiorna il testo informativo mostrando i tre tetti di spesa separati
+      function updateHintText() {
+        if (!document.body.classList.contains('is-editing')) return;
+        const currentRankData = sheetState.rank_config[sheetState.rank];
+        if (!currentRankData) return;
+
+        const spentSkills = getSpentPoints('skills');
+        const spentSocial = getSpentPoints('social') - 5; // Rimuoviamo la base di 1 punto per card
+
+        editHint.innerHTML = `<strong>Rango attuale: ${sheetState.rank.toUpperCase()}</strong><br>` +
+          `Punti Conoscenza spesi: ${spentSkills}/${currentRankData.max_skills} (Limite Singolo: ${currentRankData.skill_level_cap})<br>` +
+          `Punti Sociali extra spesi: ${spentSocial}/${currentRankData.max_social}`;
+      }
+
+      function recalcCombat() {
+        const a = sheetState.attrs;
+        const s = sheetState.skills;
+        const values = {
+          hp: sheetState.baseHp + a.vitality,
+          will: 2 + a.insight,
+          init: a.dexterity + (s.alert || 0),
+          evasion: a.dexterity + (s.evasion || 0),
+          clashPhys: a.strength + (s.brawl || 0),
+          clashSpec: a.special + (s.brawl || 0),
+          def: a.vitality,
+          sdef: a.insight,
+        };
+        Object.entries(values).forEach(([key, val]) => {
+          const el = document.querySelector('[data-combat="' + key + '"]');
+          if (el) el.textContent = val;
+        });
+      }
+
+      function setEditMode(on) {
+        document.body.classList.toggle('is-editing', on);
+        btnToggleEdit.classList.toggle('is-active', on);
+        console.log(on)
+        selectRango.setAttribute("disabled", "true");
+        btnToggleEdit.setAttribute('aria-pressed', on ? 'true' : 'false');
+        btnToggleEdit.textContent = on ? 'Fine modifica' : 'Modifica scheda';
+        editHint.hidden = !on;
+        if (on) updateHintText();
+      }
+
+      btnToggleEdit.addEventListener('click', () => {
+        setEditMode(!document.body.classList.contains('is-editing'));
+      });
+
+      document.querySelectorAll('[data-editable-dots]').forEach((wrap) => {
+        wrap.addEventListener('click', (e) => {
+          if (!document.body.classList.contains('is-editing')) return;
+          const dot = e.target.closest('.dot[data-dot-index]');
+          if (!dot) return;
+
+          const key = wrap.dataset.key;
+          const index = parseInt(dot.dataset.dotIndex, 10);
+          const current = getLevel(key);
+          const targetLevel = (current === index) ? index - 1 : index;
+
+          const success = setLevel(key, targetLevel);
+
+          if (success !== false) {
+            updateDotsUI(key);
+            if (key in sheetState.attrs || key in sheetState.skills) {
+              recalcCombat();
+            }
+          }
+        });
+      });
+
+      document.getElementById('btnAddTeam')?.addEventListener('click', () => {
+        alert('Funzione «Aggiungi al Team» — da collegare al salvataggio.');
+      });
+
+      const rankSelect = document.getElementById('pokemonRank');
+      if (rankSelect) {
+        rankSelect.addEventListener('change', () => {
+          sheetState.rank = rankSelect.value;
+          updateHintText();
+        });
+      }
+
+      recalcCombat();
+
+      const abilityModal = document.getElementById('abilityModal');
+      const abilityModalTitle = document.getElementById('abilityModalTitle');
+      const abilityModalSubtitle = document.getElementById('abilityModalSubtitle');
+      const abilityModalDescription = document.getElementById('abilityModalDescription');
+      const abilityModalEffect = document.getElementById('abilityModalEffect');
+      const abilityModalClose = document.getElementById('abilityModalClose');
+      let abilityModalTrigger = null;
+
+      const abilitiesBySlug = Object.fromEntries(
+        speciesAbilities.map((ability) => [ability.nome, ability])
+      );
+
+      console.log(abilitiesBySlug)
+
+      function openAbilityModal(nome, trigger) {
+        const ability = abilitiesBySlug[nome];
+        console.log(ability)
+        if (!ability || !abilityModal) return;
+
+        abilityModalTitle.textContent = ability.nomeItaliano;
+        abilityModalSubtitle.textContent = ability.nome;
+        abilityModalDescription.textContent = ability.descrizione;
+        abilityModalEffect.textContent = ability.effettiAggiuntivi;
+
+        abilityModal.hidden = false;
+        abilityModal.classList.add('is-open');
+        document.body.style.overflow = 'hidden';
+        abilityModalTrigger = trigger || null;
+        abilityModalClose.focus();
+      }
+
+      function closeAbilityModal() {
+        if (!abilityModal) return;
+
+        abilityModal.classList.remove('is-open');
+        abilityModal.hidden = true;
+        document.body.style.overflow = '';
+        if (abilityModalTrigger) {
+          abilityModalTrigger.focus();
+          abilityModalTrigger = null;
+        }
+      }
+
+      document.querySelectorAll('.ability-info-btn').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          openAbilityModal(btn.dataset.ability, btn);
+        });
+      });
+
+      abilityModalClose?.addEventListener('click', closeAbilityModal);
+
+      abilityModal?.addEventListener('click', (e) => {
+        if (e.target === abilityModal) {
+          closeAbilityModal();
         }
       });
-    });
 
-    document.getElementById('btnAddTeam')?.addEventListener('click', () => {
-      alert('Funzione «Aggiungi al Team» — da collegare al salvataggio.');
-    });
-
-    const rankSelect = document.getElementById('pokemonRank');
-    if (rankSelect) {
-      rankSelect.addEventListener('change', () => {
-        sheetState.rank = rankSelect.value;
-        updateHintText(); // Ricalcola il testo dei punti massimi quando cambi rango nel menu a tendina
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' && abilityModal?.classList.contains('is-open')) {
+          closeAbilityModal();
+        }
       });
-    }
+    </script>
 
-    recalcCombat();
-  </script>
 </body>
 
 </html>
