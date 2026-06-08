@@ -24,6 +24,8 @@ if (!empty($_POST['nomeAllenatore']) && !empty($_POST['codiceProfilo'])) {
         // Set message to be displayed on the dashboard
         $_SESSION['message'] = 'Login effettuato con successo!';
         $_SESSION['loginResult'] = true;
+        $_SESSION['pokemonId'] = $_POST['pokemonId'] ?? 0;
+
 
         // disconnect from the database
         DB::disconnect($connection);
@@ -73,4 +75,14 @@ function getTeamPokemon($idAllenatore)
     } else {
         return $teamPokemon;
     }
+}
+
+
+
+function catchPokemon($allenatoreId, $pokemonId)
+{
+    $connection = DB::connect();
+    $cattura = Allenatore::getTeamPokemon($connection, $allenatoreId, $pokemonId);
+    DB::Disconnect($connection);
+    return $cattura;
 }

@@ -131,4 +131,60 @@ class Allenatore
         }
         return $rows;
     }
+
+
+    public static function catchPokemon($connection, $allenatoreId, $pokemonId)
+    {
+        $numeroPokedex = "#" . str_pad((string)$pokemonId, 3, '0', STR_PAD_LEFT);
+
+        // Query to select all records from the company table
+        $query = "SELECT * FROM pokemon where numeroPokedex = '" . $numeroPokedex . "'";
+
+        // Execute the query and return an array of rows
+        $result = $connection->query($query);
+        $rows = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
+            }
+            $result->free();
+        }
+
+
+        // Prepare the SQL statement to insert the company data into the database
+        $stmt = $connection->prepare("INSERT INTO pokemon_allenatori  (idAllenatore, idPokemon, idRango, strenght, dexterity, vitality, special, insight, tought, beauty, cool, cute, clever) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+
+        // Creiamo una variabile per il valore fisso 1
+        $default_stat = 1;
+
+        // Bind the parameters to the SQL statement
+        // NOTA: "iiiiiiiiiiii" contiene esattamente 12 "i" per 12 variabili
+        $stmt->bind_param(
+            "iiiiiiiiiiiii",
+            $allenatoreId,
+            $rows[0]['id'],
+            $rows[0]['idRango'],
+            $rows[0]['baseStrenght'],
+            $rows[0]['baseDexterity'],
+            $rows[0]['baseVitality'],
+            $rows[0]['baseSpecial'],
+            $rows[0]['baseInsight'], // Ho rimosso baseSpecial che avanzava rispetto ai campi della query
+            $default_stat,           // tought
+            $default_stat,           // beauty
+            $default_stat,           // cool
+            $default_stat,           // cute
+            $default_stat            // clever
+        );
+
+        // Execute the statement and check for success
+        if ($stmt->execute()) {
+
+            // return true if the data is saved successfully
+            return true;
+        } else {
+
+            // return false if there was an error saving the data
+            return false;
+        }
+    }
 }

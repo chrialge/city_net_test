@@ -337,6 +337,10 @@ $limite_singola_conoscenza = 1;
 
 $js_rank_config = [];
 
+echo "<pre>";
+print_r($ranghi);
+echo "</pre>";
+
 foreach ($ranghi as $rango) {
   $key = strtolower($rango['nome']);
 
@@ -352,14 +356,10 @@ foreach ($ranghi as $rango) {
     'max_skills' => $max_conoscenze_cumulati,
     'skill_level_cap' => $rango['limiteLivelloConoscenza']
   ];
-
-  if ($pokemon_rank === $key) {
-    $limite_singola_conoscenza = $rango['limiteLivelloConoscenza'];
-    break; // Abbiamo raggiunto il rango del Pokémon, fermiamo l'accumulo per il calcolo PHP iniziale
-  }
 }
 
 // Struttura di configurazione aggiornata per JavaScript
+
 $sheet_config = [
   'baseHp' => $base_hp,
   'rank' => $pokemon_rank,
@@ -368,6 +368,8 @@ $sheet_config = [
   'social' => $pokemon_social,
   'rank_config' => $js_rank_config // Passiamo tutta la struttura cumulata a JS
 ];
+
+
 
 
 
@@ -1564,7 +1566,7 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
     }
 
     .section-alert-banner {
-      margin-top: 14px;
+      margin: 14px 0;
       padding: 12px 14px;
       background: rgba(255, 255, 255, 0.6);
       border-left: 4px solid var(--type-accent);
@@ -1720,7 +1722,7 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
 
           </div>
           <div class="section-alert-banner">
-            <strong>Info Abilità:</strong> Rappresentano il bagaglio di competenze e conoscenze del Pokémon. Il livello massimo raggiungibile su una singola abilità e i punti totali spendibili dipendono strettamente dal suo <em>Rango attuale</em>.
+            <span><strong>Punti Conoscenza spesi:</strong> 0/14 (Limite Singolo: 3)</span>
           </div>
 
           <div class="skill-groups">
@@ -1763,32 +1765,51 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
 
             <div class="attrs-base">
               <h3 class="attrs-block-title">Combattimento</h3>
+              <div class="section-alert-banner">
+                <span><strong>Punti Sociali extra spesi:</strong> 0/4</span>
+              </div>
               <div class="combat-attrs">
                 <div class="combat-attr-card">
                   <span class="combat-attr-name">Strength</span>
-                  <?php echo render_dots($pokemon_attrs['strength'], $pokemon_attrs['limiteStrength'], false, 'attr', 'strength'); ?>
+                  <div class="combat-attr-dots">
+                    <?php echo render_dots($pokemon_attrs['strength'], $pokemon_attrs['limiteStrength'], false, 'attr', 'strength'); ?>
+                  </div>
                 </div>
                 <div class="combat-attr-card">
                   <span class="combat-attr-name">Dexterity</span>
-                  <?php echo render_dots($pokemon_attrs['dexterity'], $pokemon_attrs['limiteDexterity'], false, 'attr', 'dexterity'); ?>
+                  <div class="combat-attr-dots">
+                    <?php echo render_dots($pokemon_attrs['dexterity'], $pokemon_attrs['limiteDexterity'], false, 'attr', 'dexterity'); ?>
+                  </div>
                 </div>
                 <div class="combat-attr-card">
                   <span class="combat-attr-name">Vitality</span>
-                  <?php echo render_dots($pokemon_attrs['vitality'], $pokemon_attrs['limiteVitality'], false, 'attr', 'vitality'); ?>
+                  <div class="combat-attr-dots">
+                    <?php echo render_dots($pokemon_attrs['vitality'], $pokemon_attrs['limiteVitality'], false, 'attr', 'vitality'); ?>
+                  </div>
+
                 </div>
                 <div class="combat-attr-card">
                   <span class="combat-attr-name">Special</span>
-                  <?php echo render_dots($pokemon_attrs['special'], $pokemon_attrs['limiteSpecial'], false, 'attr', 'special'); ?>
+                  <div class="combat-attr-dots">
+                    <?php echo render_dots($pokemon_attrs['special'], $pokemon_attrs['limiteSpecial'], false, 'attr', 'special'); ?>
+                  </div>
+
                 </div>
                 <div class="combat-attr-card">
                   <span class="combat-attr-name">Insight</span>
-                  <?php echo render_dots($pokemon_attrs['insight'], $pokemon_attrs['limiteInsight'], false, 'attr', 'insight'); ?>
+                  <div class="combat-attr-dots">
+                    <?php echo render_dots($pokemon_attrs['insight'], $pokemon_attrs['limiteInsight'], false, 'attr', 'insight'); ?>
+                  </div>
+
                 </div>
               </div>
             </div>
 
             <div class="attrs-social">
               <h3 class="attrs-block-title">Sociali</h3>
+              <div class="section-alert-banner">
+                <span><strong>Punti Sociali extra spesi:</strong> 0/4</span>
+              </div>
               <div class="social-attrs">
                 <div class="social-card social-card--tough">
                   <span class="social-name">Tough</span>
@@ -1936,7 +1957,9 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
 
     <script>
       const sheetState = <?php echo json_encode($sheet_config, JSON_UNESCAPED_UNICODE); ?>;
+      console.log(sheetState)
       const speciesAbilities = <?php echo json_encode($pokemon_species_abilities, JSON_UNESCAPED_UNICODE); ?>;
+
 
       const btnToggleEdit = document.getElementById('btnToggleEdit');
       const editHint = document.getElementById('editHint');
@@ -1946,6 +1969,12 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
       function getSpentPoints(group) {
         return Object.values(sheetState[group]).reduce((sum, val) => sum + val, 0);
       }
+
+      const attrBase = Object.keys(sheetState.attrs)
+        .filter(k => !k.startsWith('limite'))
+        .reduce((sum, k) => sum + sheetState.attrs[k], 0);
+
+      const attrSocialBase = getSpentPoints('social');
 
       function getLevel(key) {
         if (key in sheetState.attrs) return sheetState.attrs[key];
@@ -2055,7 +2084,21 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
         if (!currentRankData) return;
 
         const spentSkills = getSpentPoints('skills');
-        const spentSocial = getSpentPoints('social') - 5; // Rimuoviamo la base di 1 punto per card
+        const spentSocial = getSpentPoints('social') - attrSocialBase;
+        const spentAttr = getSpentPoints('attrs') - attrBase;
+
+        console.log(currentRankData)
+        console.log(spentSkills)
+        console.log(spentAttr)
+        // Rimuoviamo la base di 1 punto per card
+
+        editSocial = `<strong>Rango attuale: ${sheetState.rank.toUpperCase()}</strong><br>` +
+          `Punti Conoscenza spesi: ${spentSkills}/${currentRankData.max_skills} (Limite Singolo: ${currentRankData.skill_level_cap})<br>` +
+          `Punti Sociali extra spesi: ${spentSocial}/${currentRankData.max_social}`;
+
+        editattr = `<strong>Rango attuale: ${sheetState.rank.toUpperCase()}</strong><br>` +
+          `Punti Conoscenza spesi: ${spentSkills}/${currentRankData.max_skills} (Limite Singolo: ${currentRankData.skill_level_cap})<br>` +
+          `Punti Sociali extra spesi: ${spentSocial}/${currentRankData.max_social}`;
 
         editHint.innerHTML = `<strong>Rango attuale: ${sheetState.rank.toUpperCase()}</strong><br>` +
           `Punti Conoscenza spesi: ${spentSkills}/${currentRankData.max_skills} (Limite Singolo: ${currentRankData.skill_level_cap})<br>` +
@@ -2085,7 +2128,11 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
         document.body.classList.toggle('is-editing', on);
         btnToggleEdit.classList.toggle('is-active', on);
         console.log(on)
-        selectRango.setAttribute("disabled", "true");
+        if (on == true) {
+          selectRango.setAttribute("disabled", true);
+        } else {
+          selectRango.removeAttribute("disabled", true);
+        }
         btnToggleEdit.setAttribute('aria-pressed', on ? 'true' : 'false');
         btnToggleEdit.textContent = on ? 'Fine modifica' : 'Modifica scheda';
         editHint.hidden = !on;

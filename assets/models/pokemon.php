@@ -115,7 +115,7 @@ class Pokemon
 
     public static function getPokemonTypesById($connection, $id)
     {
-        $sql = "SELECT pokemon_tipologie.* FROM pokemon_tipologie_pivot INNER JOIN pokemon_tipologie ON pokemon_tipologie_pivot.idTipologiaPokemon = pokemon_tipologie.id WHERE pokemon_tipologie_pivot.idPokemon = ?";
+        $sql = "SELECT pokemon_tipologie.* FROM pokemon_tipologie_pivot INNER JOIN pokemon_tipologie ON pokemon_tipologie_pivot.idTipologiaPokemon = pokemon_tipologie.id WHERE pokemon_tipologie_pivot.idPokemon = ? ";
 
         if ($statement = $connection->prepare($sql)) {
             $statement->bind_param('i', $id);

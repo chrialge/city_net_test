@@ -2,13 +2,31 @@
 
 require_once __DIR__ . '/../assets/controller/allenatore.php';
 
+
 session_start();
 
 echo "<pre>";
 print_r($_SESSION);
 echo "</pre>";
 
-$allenatoreId = $_SESSION['allenatoreId'] ?? 0;
+$allenatoreId = isset($_SESSION['allenatoreId']) ?? 0;
+$pokemonID = $_GET['pokemonId'] ?? 0;
+
+if (isset($_SESSION['allenatoreId'])) {
+  if (isset($_GET['pokemonId']) > 0 && isset($_SESSION['allenatoreId']) > 0) {
+
+
+    catchPokemon($allenatoreId, $pokemonID);
+  } elseif (isset($_SESSION['pokemonId']) > 0 && isset($_SESSION['allenatoreId']) > 0) {
+    catchPokemon($allenatoreId, $_SESSION['pokemonId']);
+  } else {
+
+    unset($_SESSION['pokemonId']);
+  }
+}
+
+
+
 
 if ($allenatoreId > 0) {
   $allenatore = getAllenatoreId($allenatoreId);
@@ -583,6 +601,9 @@ if ($allenatoreId > 0) {
           <p class="login-text">Inserisci il nome allenatore per visualizzare il tuo team. Questa versione è pronta per essere collegata a PHP/MySQL.</p>
 
           <form action="../assets/controller/allenatore.php" id="loginForm" method="POST">
+            <?php if ($pokemonID > 0) : ?>
+              <input type="hidden" name="pokemonId" value="<?= $pokemonID ?>">
+            <?php endif; ?>
             <div class="form-group">
               <label class="form-label" for="nomeAllenatore">Nome allenatore</label>
               <input class="form-control" type="text" id="trainerName" name="nomeAllenatore" placeholder="Es. Ash" autocomplete="name" required>
