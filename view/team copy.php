@@ -2,76 +2,29 @@
 
 require_once __DIR__ . '/../assets/controller/allenatore.php';
 require_once __DIR__ . "/../assets/helper/function.php";
-require_once __DIR__ . "/../assets/helper/db.php";
-
+require_once __DIR__ . '/../assets/controller/pokemon.php';
+require_once __DIR__ . '/../assets/helper/db.php';
 
 
 session_start();
 
 
 
-$allenatoreId = isset($_SESSION['allenatoreId']) ? $_SESSION['allenatoreId'] : 0;
+$allenatoreId = isset($_SESSION['allenatoreId']) ?? 0;
 $pokemonID = $_GET['pokemonId'] ?? 0;
 
 if (isset($_SESSION['allenatoreId'])) {
   if (isset($_GET['pokemonId']) > 0 && isset($_SESSION['allenatoreId']) > 0) {
-    echo 1;
 
 
-
-    //check se il pokemon c' lha
-    $checkPokemon = checkPokemonGiaEsistenteTeam($allenatoreId, $pokemonID);
-    $checkPokemon2 = checkPokemonTeam($allenatoreId);
-
-    $checkPokemon2 = (array) $checkPokemon;
-    if (count($checkPokemon2) > 0) {
-
-
-      if ($checkPokemon2 == true) {
-
-        catchPokemon($allenatoreId, $pokemonID);
-
-        $_SESSION['message'] = 'Hai catturato un nuovo Pokèmon.';
-        $_SESSION['loginResult'] = true;
-      } else {
-        $_SESSION['message'] = 'Purtroppo non puoi aggiugere altri pokemon finchè non ne lasci libero uno.';
-        $_SESSION['loginResult'] = false;
-      }
-    } else {
-      $_SESSION['message'] = 'Il Pokémon fa già parte del tuo team.';
-      $_SESSION['loginResult'] = false;
-    }
+    catchPokemon($allenatoreId, $pokemonID);
   } elseif (isset($_SESSION['pokemonId']) > 0 && isset($_SESSION['allenatoreId']) > 0) {
-    echo 2;
-    //check se il pokemon c' lha
-    $checkPokemon = checkPokemonGiaEsistenteTeam($allenatoreId, $pokemonID);
-    $checkPokemon2 = checkPokemonTeam($allenatoreId);
-
-    $checkPokemon2 = (array) $checkPokemon;
-    if (count($checkPokemon2) > 0) {
-
-
-      if ($checkPokemon2 == true) {
-
-        catchPokemon($allenatoreId, $pokemonID);
-
-        $_SESSION['message'] .= 'Hai catturato un nuovo Pokèmon.';
-        $_SESSION['loginResult'] = true;
-      } else {
-        $_SESSION['message'] .= 'Purtroppo non puoi aggiugere altri pokemon finchè non ne lasci libero uno.';
-        $_SESSION['loginResult'] = false;
-      }
-    } else {
-      $_SESSION['message'] .= 'Il Pokémon fa già parte del tuo team.';
-      $_SESSION['loginResult'] = false;
-    }
+    catchPokemon($allenatoreId, $_SESSION['pokemonId']);
   } else {
-    echo 3;
 
     unset($_SESSION['pokemonId']);
   }
 }
-
 
 $pokemonNew = getPokemonDetailFromPokeAPI(1);
 
@@ -81,6 +34,10 @@ if ($allenatoreId > 0) {
   $allenatore = getAllenatoreId($allenatoreId);
 
   $teamPokemon = getTeamPokemon($allenatoreId);
+
+  echo "<pre>";
+  print_r($teamPokemon);
+  echo "</pre>";
 }
 
 
@@ -247,9 +204,11 @@ if ($allenatoreId > 0) {
     }
 
     .danger-btn {
-      background: #dc2626;
-      color: white;
-      box-shadow: 0 4px 12px rgba(220, 38, 38, 0.25);
+      width: auto;
+      padding: 9px 12px;
+      font-size: 13px;
+      background: #fee2e2;
+      color: #dc2626;
     }
 
     .hint-box {
@@ -310,7 +269,7 @@ if ($allenatoreId > 0) {
     .profile-actions {
       margin-top: 12px;
       display: grid;
-      grid-template-columns: 1fr;
+      grid-template-columns: 1fr 1fr;
       gap: 8px;
     }
 
@@ -398,12 +357,6 @@ if ($allenatoreId > 0) {
       align-items: center;
       justify-content: center;
       font-size: 28px;
-    }
-
-    .pokemon-sprite img {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
     }
 
     .pokemon-info {
@@ -510,8 +463,7 @@ if ($allenatoreId > 0) {
       font-weight: bold;
     }
 
-    /* Stili Modale di Rimozione */
-    .remove-pokemon-modal {
+    .ability-modal {
       position: fixed;
       inset: 0;
       z-index: 100;
@@ -521,44 +473,27 @@ if ($allenatoreId > 0) {
       background: rgba(15, 23, 42, 0.6);
       opacity: 0;
       visibility: hidden;
-      transition: opacity 0.2s ease, visibility 0.2s ease;
     }
 
-    .remove-pokemon-modal.is-open {
+    .ability-modal.is-open {
       opacity: 1;
       visibility: visible;
     }
 
-    .remove-pokemon-modal-dialog {
+    .ability-modal-dialog {
       background: white;
-      padding: 24px;
+      padding: 20px;
       border-radius: 18px;
       width: 90%;
-      max-width: 420px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
-      position: relative;
+      max-width: 400px;
     }
 
-    .remove-pokemon-modal-close {
-      position: absolute;
-      top: 16px;
-      right: 16px;
+    .ability-modal-close {
+      float: right;
       cursor: pointer;
       border: none;
       background: none;
-      font-size: 24px;
-      color: #9ca3af;
-    }
-
-    .remove-pokemon-modal-close:hover {
-      color: #4b5563;
-    }
-
-    .modal-actions {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 12px;
-      margin-top: 20px;
+      font-size: 20px;
     }
 
 
@@ -638,7 +573,6 @@ if ($allenatoreId > 0) {
       position: relative;
       border: 2px solid;
       border-radius: 10px;
-      margin-bottom: 15px;
     }
 
     .alert-error {
@@ -729,15 +663,15 @@ if ($allenatoreId > 0) {
       <section class="screen <?= $allenatoreId > 0 ? "active" : "" ?>" id="profileScreen" aria-label="Profilo e team">
         <article class="profile-card">
           <div class="profile-header">
-            <div class="avatar" id="trainerAvatar"><?= ($allenatoreId > 0 && isset($allenatore['nomeAllenatore'])) ? strtoupper($allenatore['nomeAllenatore'][0]) : '' ?></div>
+            <div class="avatar" id="trainerAvatar"><?= strtoupper($allenatore['nomeAllenatore'][0]) ?></div>
             <div class="profile-info">
-              <h2 class="profile-name" id="profileName"><?= $allenatore['nomeAllenatore'] ?? '' ?></h2>
+              <h2 class="profile-name" id="profileName"><?= $allenatore['nomeAllenatore'] ?></h2>
               <div class="profile-badges" style="display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap;">
                 <span class="type-tag" style="background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd;">
-                  Rango: <?= $allenatore['rangoNome'] ?? '' ?>
+                  Rango: <?= $allenatore['rangoNome'] ?>
                 </span>
                 <span class="type-tag" style="background: #f3e8ff; color: #6b21a8; border: 1px solid #e9d5ff;">
-                  Età: <?= $allenatore['rangeEtaNome'] ?? '' ?>
+                  Età: <?= $allenatore['rangeEtaNome'] ?>
                 </span>
               </div>
             </div>
@@ -746,15 +680,15 @@ if ($allenatoreId > 0) {
 
           <div class="stats-row">
             <div class="stat-box">
-              <span class="stat-value" id="teamCount"><?= isset($teamPokemon) ? count($teamPokemon) : 0 ?></span>
+              <span class="stat-value" id="teamCount"><?= count($teamPokemon) ?></span>
               <span class="stat-label">Team</span>
             </div>
             <div class="stat-box">
-              <span class="stat-value"><?= $allenatore['limitePokemon'] ?? 6 ?></span>
+              <span class="stat-value"><?= $allenatore['limitePokemon'] ?></span>
               <span class="stat-label">Max slot</span>
             </div>
             <div class="stat-box">
-              <span class="stat-value" id="freeSlots"><?= isset($teamPokemon) ? (($allenatore['limitePokemon'] ?? 6) - count($teamPokemon)) : 6 ?></span>
+              <span class="stat-value" id="freeSlots"><?= ($allenatore['limitePokemon'] - count($teamPokemon)) ?></span>
               <span class="stat-label">Liberi</span>
             </div>
           </div>
@@ -770,32 +704,30 @@ if ($allenatoreId > 0) {
 
         <div class="section-title-row">
           <h2 class="section-title">Pokémon nel team</h2>
-          <span class="team-counter" id="teamCounter"><?= isset($teamPokemon) ? count($teamPokemon) : 0 ?> / <?= $allenatore['limitePokemon'] ?? 6 ?></span>
+          <span class="team-counter" id="teamCounter"><?= count($teamPokemon) ?> / <?= $allenatore['limitePokemon'] ?></span>
         </div>
 
         <section class="team-list" id="teamList">
-          <?php if (isset($teamPokemon) && is_array($teamPokemon)): ?>
-            <?php foreach ($teamPokemon as $pokemon) : ?>
-              <article class="team-card" data-id="<?= $pokemon['id'] ?>">
-                <div class="pokemon-sprite" aria-hidden="true">
-                  <img src="<?= $pokemon['img'] ?>" alt="immagine di <?= $pokemon['nome'] ?>">
+          <?php foreach ($teamPokemon as $pokemon) : ?>
+            <article class="team-card" data-id="25">
+              <div class="pokemon-sprite" aria-hidden="true">
+                <img src="<?= $pokemon['img'] ?>" alt="immagine di <?= $pokemon['nome'] ?>">
+              </div>
+              <div class="pokemon-info">
+                <div class="pokemon-name-row">
+                  <h3 class="pokemon-name"><?= $pokemon['nome'] ?></h3>
+                  <span class="pokemon-number"><?= $pokemon['numeroPokedex'] ?></span>
                 </div>
-                <div class="pokemon-info">
-                  <div class="pokemon-name-row">
-                    <h3 class="pokemon-name"><?= $pokemon['nome'] ?></h3>
-                    <span class="pokemon-number"><?= $pokemon['numeroPokedex'] ?></span>
-                  </div>
-                  <p class="pokemon-meta"><?= $pokemon['rangoNome'] ?></p>
-                  <div class="type-tags">
-                    <?php foreach ($pokemon['tipologie'] as $tipologia): ?>
-                      <span class="type-tag" style="background-color: <?= $tipologia['colorePrincipale'] ?>; color: <?= $tipologia['coloreTesto'] ?>"><?= $tipologia['nome'] ?></span>
-                    <?php endforeach; ?>
-                  </div>
+                <p class="pokemon-meta"><?= $pokemon['rangoNome'] ?></p>
+                <div class="type-tags">
+                  <?php foreach ($pokemon['tipologie'] as $tipologia): ?>
+                    <span class="type-tag" style="background-color: <?= $tipologia['colorePrincipale'] ?>; color: <?= $tipologia['coloreTesto'] ?>"><?= $tipologia['nome'] ?></span>
+                  <?php endforeach; ?>
                 </div>
-                <button class="remove-btn remove-pokemon" type="button" data-id="<?= $pokemon['id'] ?>" data-nome="<?= $pokemon['nome'] ?>" aria-label="Rimuovi <?= $pokemon['nome'] ?> dal team">×</button>
-              </article>
-            <?php endforeach; ?>
-          <?php endif; ?>
+              </div>
+              <button class="remove-btn remove-pokemon" type="button" data-pokemon="<?= $pokemon['id'] ?>" aria-label="Rimuovi <?= $pokemon['nome'] ?> dal team">×</button>
+            </article>
+          <?php endforeach; ?>
 
         </section>
 
@@ -814,26 +746,17 @@ if ($allenatoreId > 0) {
 
   </main>
 
-  <div class="remove-pokemon-modal" id="removePokemonModal" role="dialog" aria-modal="true">
+  <div class="remove-pokemon-modal" id="removePokemonModal" role="dialog" aria-modal="true" hidden>
     <div class="remove-pokemon-modal-dialog">
       <button type="button" class="remove-pokemon-modal-close" id="removePokemonModalClose">&times;</button>
-      <h2 id="removePokemonModalTitle" style="margin: 0 0 10px; font-size: 20px; color: #111827;">Rimuovi Pokémon</h2>
-
-      <div id="removePokemonDescContainer" style="margin-bottom: 20px;">
-        <p id="removePokemonModalDescription" style="font-size: 14px; line-height: 1.5; color: #4b5563;">
-          La cancellazione comporterà la cancellazione dei dati del Pokémon <strong id="modalPokemonName"></strong> e di tutti i dati a lui associati.
-          <br><br>
-          Se sei sicuro, conferma l'operazione.
-        </p>
+      <h2 id="removePokemonModalTitle"></h2>
+      <p id="removePokemonModalSubtitle" style="color:#64748b; font-size:14px; margin:4px 0 12px;"></p>
+      <div id="removePokemonDescContainer">
+        <p id="removePokemonModalDescription"></p>
       </div>
+      <div id="removePokemonModalBtn" style="margin-top:10px; padding-top:10px; border-top:1px solid #e2e8f0;">
 
-      <form action="../assets/controller/allenatore.php" method="POST" id="removePokemonForm">
-        <input type="hidden" name="idPokemonRemove" id="modalPokemonIdInput" value="">
-        <div class="modal-actions">
-          <button type="button" class="ghost-btn" id="cancelRemoveBtn" style="padding: 10px;">Annulla</button>
-          <button type="submit" class="primary-btn danger-btn" style="padding: 10px; margin-top: 0;">Conferma</button>
-        </div>
-      </form>
+      </div>
     </div>
   </div>
 
@@ -851,84 +774,141 @@ if ($allenatoreId > 0) {
       var teamCounter = document.getElementById('teamCounter');
       var emptyTeam = document.getElementById('emptyTeam');
       var logoutBtn = document.getElementById('logoutBtn');
+      var addDemoBtn = document.getElementById('addDemoBtn');
       var alertError = document.getElementById("alert_error");
       var alertSuccess = document.getElementById("alert_success");
-      var maxTeamSize = <?= $allenatore['limitePokemon'] ?? 6 ?>;
+      var maxTeamSize = 6;
 
-      // Gestione alert (Rimossi gli unset PHP interni che rompevano il codice)
-      if (alertError) {
-        alertError.addEventListener('click', function() {
-          alertError.style.display = "none";
-        });
-      }
+      var demoPokemon = [{
+          id: 7,
+          icon: '💧',
+          name: 'Squirtle',
+          number: '#007',
+          meta: 'Lv. 9 · Maschio',
+          types: ['Acqua']
+        },
+        {
+          id: 39,
+          icon: '🎵',
+          name: 'Jigglypuff',
+          number: '#039',
+          meta: 'Lv. 8 · Femmina',
+          types: ['Normale', 'Folletto']
+        },
+        {
+          id: 133,
+          icon: '⭐',
+          name: 'Eevee',
+          number: '#133',
+          meta: 'Lv. 13 · Femmina',
+          types: ['Normale']
+        }
+      ];
 
-      if (alertSuccess) {
-        alertSuccess.addEventListener('click', function() {
-          alertSuccess.style.display = "none";
-        });
-      }
+      alertError.addEventListener('click', function() {
+        <?php unset($_SESSION['loginResult']); ?>
+        alertError.style.display = "none";
+      })
+
+      alertSuccess.addEventListener('click', function() {
+        <?php unset($_SESSION['loginResult']); ?>
+        alertSuccess.style.display = "none";
+      })
+
 
       function updateTeamStats() {
         var cards = teamList.querySelectorAll('.team-card');
         var total = cards.length;
 
-        if (teamCount) teamCount.textContent = total;
-        if (freeSlots) freeSlots.textContent = Math.max(maxTeamSize - total, 0);
-        if (teamCounter) teamCounter.textContent = total + ' / ' + maxTeamSize;
-        if (emptyTeam) emptyTeam.classList.toggle('visible', total === 0);
+        teamCount.textContent = total;
+        freeSlots.textContent = Math.max(maxTeamSize - total, 0);
+        teamCounter.textContent = total + ' / ' + maxTeamSize;
+        emptyTeam.classList.toggle('visible', total === 0);
       }
 
-      // Elementi della modale
-      var removeModal = document.getElementById('removePokemonModal');
-      var removeModalClose = document.getElementById('removePokemonModalClose');
-      var cancelRemoveBtn = document.getElementById('cancelRemoveBtn');
-      var modalPokemonName = document.getElementById('modalPokemonName');
-      var modalPokemonIdInput = document.getElementById('modalPokemonIdInput');
+      function bindRemoveButton(card) {
+        var button = card.querySelector('.remove-btn');
+        if (!button) return;
 
-      function openRemoveModal(id, nome) {
-        modalPokemonName.textContent = nome;
-        modalPokemonIdInput.value = id;
-        removeModal.classList.add('is-open');
-      }
-
-      function closeRemoveModal() {
-        removeModal.classList.remove('is-open');
-      }
-
-      // Agganciamo l'evento click ai bottoni di rimozione della card
-      if (teamList) {
-        teamList.addEventListener('click', function(e) {
-          var targetBtn = e.target.closest('.remove-pokemon');
-          if (targetBtn) {
-            var pokemonId = targetBtn.getAttribute('data-id');
-            var pokemonNome = targetBtn.getAttribute('data-nome');
-            openRemoveModal(pokemonId, pokemonNome);
-          }
+        button.addEventListener('click', function() {
+          card.remove();
+          updateTeamStats();
         });
       }
 
-      // Chiusura modale
-      if (removeModalClose) removeModalClose.addEventListener('click', closeRemoveModal);
-      if (cancelRemoveBtn) cancelRemoveBtn.addEventListener('click', closeRemoveModal);
+      function createPokemonCard(pokemon) {
+        var card = document.createElement('article');
+        card.className = 'team-card';
+        card.setAttribute('data-id', pokemon.id);
 
-      if (removeModal) {
-        removeModal.addEventListener('click', function(e) {
-          if (e.target === removeModal) closeRemoveModal();
-        });
+        var tags = pokemon.types.map(function(type) {
+          return '<span class="type-tag">' + type + '</span>';
+        }).join('');
+
+        card.innerHTML =
+          '<div class="pokemon-sprite" aria-hidden="true">' + pokemon.icon + '</div>' +
+          '<div class="pokemon-info">' +
+          '<div class="pokemon-name-row">' +
+          '<h3 class="pokemon-name">' + pokemon.name + '</h3>' +
+          '<span class="pokemon-number">' + pokemon.number + '</span>' +
+          '</div>' +
+          '<p class="pokemon-meta">' + pokemon.meta + '</p>' +
+          '<div class="type-tags">' + tags + '</div>' +
+          '</div>' +
+          '<button class="remove-btn" type="button" aria-label="Rimuovi ' + pokemon.name + ' dal team">×</button>';
+
+        bindRemoveButton(card);
+        return card;
       }
 
-      if (logoutBtn) {
-        logoutBtn.addEventListener('click', function(e) {
-          // Se non usi il form per il logout lasciamo cambiare screen via JS
-          if (!logoutBtn.closest('form')) {
-            profileScreen.classList.remove('active');
-            loginScreen.classList.add('active');
-            trainerName.focus();
-          }
-        });
-      }
 
+      logoutBtn.addEventListener('click', function() {
+        profileScreen.classList.remove('active');
+        loginScreen.classList.add('active');
+        trainerName.focus();
+      });
+
+      addDemoBtn.addEventListener('click', function() {
+        var total = teamList.querySelectorAll('.team-card').length;
+        if (total >= maxTeamSize) return;
+
+        var pokemon = demoPokemon[total % demoPokemon.length];
+        teamList.appendChild(createPokemonCard(pokemon));
+        updateTeamStats();
+      });
+
+      teamList.querySelectorAll('.team-card').forEach(bindRemoveButton);
       updateTeamStats();
+
+      const removePokemonModal = document.getElementById('removePokemonModal');
+      const removePokemonModalTitle = document.getElementById('removePokemonModalTitle');
+      const removePokemonModalSubtitle = document.getElementById('removePokemonModalSubtitle');
+      const removePokemonModalDescription = document.getElementById('removePokemonModalDescription');
+      const removePokemonModalEffect = document.getElementById('removePokemonModalBtn');
+      const removePokemonModalClose = document.getElementById('removePokemonModalClose');
+
+
+      function openRemovePokemonModal(nome) {
+        console.log(nome);
+        document.getElementById('abilityModalDescContainer').hidden = false;
+        document.getElementById('abilityModalEffectContainer').hidden = false;
+        removePokemonModal.classList.add('is-open');
+      }
+
+      function openWarningModal(msg) {
+        document.getElementById('abilityModalDescContainer').hidden = false;
+        document.getElementById('abilityModalEffectContainer').hidden = true;
+        removePokemonModal.classList.add('is-open');
+      }
+
+      function closeRemovePokemonModal() {
+        removePokemonModal?.classList.remove('is-open');
+      }
+      document.querySelectorAll('.ability-info-btn').forEach(b => b.addEventListener('click', () => openRemovePokemonModal(b.dataset.pokemon)));
+      removePOkemonModalClose?.addEventListener('click', closeRemovePokemonModal);
+      removePokemonModal?.addEventListener('click', (e) => {
+        if (e.target === removePokemonModal) closeRemovePokemonModal();
+      });
     })();
   </script>
 

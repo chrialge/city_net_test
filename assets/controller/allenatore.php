@@ -45,6 +45,18 @@ if (!empty($_POST['nomeAllenatore']) && !empty($_POST['codiceProfilo'])) {
         // redirect to the login page
         header('Location: ../../view/team.php');
     }
+} elseif (!empty($_POST['idPokemonRemove'])) {
+    session_start();
+    $pokemonRemove = $_POST['idPokemonRemove'];
+    $allenatoreId = $_SESSION['allenatoreId'];
+    $risposta = removePokemon($allenatoreId, $pokemonRemove);
+    if ($risposta == true) {
+        header('Location: ../../view/team.php');
+    } else {
+        $_SESSION['message'] = 'è successo un problema durante la rimozione del pokemon dal tuo team!';
+        $_SESSION['loginResult'] = false;
+        header('Location: ../../view/team.php');
+    }
 }
 
 function getAllenatoreId($id)
@@ -61,20 +73,42 @@ function getTeamPokemon($idAllenatore)
 
     $connection = DB::connect();
     $teamPokemon = Allenatore::getTeamPokemon($connection, $idAllenatore);
-    DB::Disconnect($connection);
 
-    if (count($teamPokemon) > 0) {
+    if ($teamPokemon) {
         $array = [];
+
         foreach ($teamPokemon as $pokemon) {
-            $newDataPokemon = Pokemon::getPokemonById($pokemon['idPokemon']);
-            $pokemonNew = getPokemonDetailFromPokeAPI(intval($newDataPokemon['numeroPokedex']));
-            array_push($array, $pokemonNew);
+            $newDataPokemon = getPokemonById($pokemon['idPokemon']);
+
+            sscanf($newDataPokemon['numeroPokedex'], '#%d', $id);
+            $pokemonNew = getPokemonDetailFromPokeAPI($id);
+
+            $newDataPokemon2 = [
+                "id" => $pokemon['idPokemon'],
+                "nome" => $newDataPokemon['nome'],
+                'img' => $pokemonNew['img'],
+                'numeroPokedex' => $newDataPokemon['numeroPokedex'],
+                'rangoNome' => $newDataPokemon['rangoNome'],
+                'tipologie' => $newDataPokemon['tipologie']
+            ];
+
+            array_push($array, $newDataPokemon2);
         }
+
+
 
         return $array;
     } else {
         return $teamPokemon;
     }
+}
+
+function removePokemon($allenatoreId, $pokemonId)
+{
+    $connection = DB::connect();
+    $risposta = Allenatore::removePokemonTeam($connection, $allenatoreId, $pokemonId);
+    DB::Disconnect($connection);
+    return $risposta;
 }
 
 
@@ -85,4 +119,21 @@ function catchPokemon($allenatoreId, $pokemonId)
     $cattura = Allenatore::getTeamPokemon($connection, $allenatoreId, $pokemonId);
     DB::Disconnect($connection);
     return $cattura;
+}
+
+function checkPokemonGiaEsistenteTeam($allenatoreId, $pokemonId)
+{
+    $connection = DB::connect();
+    $risposta = Allenatore::getTeamPokemon($connection, $allenatoreId, $pokemonId);
+    DB::Disconnect($connection);
+    return $risposta;
+}
+
+function checkPokemonTeam($allenatoreId)
+{
+    $allenatore = getAllenatoreId($allenatoreId);
+    $connection = DB::connect();
+    $risposta = Allenatore::checkPokemonTeam($connection, $allenatoreId, $allenatore['limitePokemon']);
+    DB::Disconnect($connection);
+    return $risposta;
 }

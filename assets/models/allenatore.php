@@ -118,7 +118,7 @@ class Allenatore
     public static function getTeamPokemon($connection, $idAllenatore)
     {
         // Query to select all records from the company table
-        $query = "SELECT * FROM pokemon_allenatori where idAllenatore = " . $idAllenatore . "";
+        $query = "SELECT pokemon.*, ranghi.nome as rangoNome, ranghi.descrizione as rangoDescrizione, pokemon_allenatori.*  FROM pokemon_allenatori INNER JOIN ranghi ON pokemon_allenatori.idRango = ranghi.id INNER JOIN pokemon ON pokemon_allenatori.idPokemon = pokemon.id where idAllenatore = " . $idAllenatore . "";
 
         // Execute the query and return an array of rows
         $result = $connection->query($query);
@@ -151,29 +151,33 @@ class Allenatore
         }
 
 
-        // Prepare the SQL statement to insert the company data into the database
-        $stmt = $connection->prepare("INSERT INTO pokemon_allenatori  (idAllenatore, idPokemon, idRango, strenght, dexterity, vitality, special, insight, tought, beauty, cool, cute, clever) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+        // 1. Prepariamo la query (16 parametri in totale)
+        $stmt = $connection->prepare("INSERT INTO pokemon_allenatori (idAllenatore, idPokemon, idRango, strenght, dexterity, vitality, special, insight, tought, beauty, cool, cute, clever, felicita, lealta, idNatura) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 
-        // Creiamo una variabile per il valore fisso 1
+        // 2. Creiamo le variabili per i valori fissi (obbligatorio per il pass-by-reference)
         $default_stat = 1;
+        $default_zero = 0;
+        $default_natura = 1; // Sostituisci con l'ID natura corretto o la variabile corretta
 
-        // Bind the parameters to the SQL statement
-        // NOTA: "iiiiiiiiiiii" contiene esattamente 12 "i" per 12 variabili
+        // 3. Eseguiamo il bind con 16 "i" e 16 variabili reali
         $stmt->bind_param(
-            "iiiiiiiiiiiii",
-            $allenatoreId,
-            $rows[0]['id'],
-            $rows[0]['idRango'],
-            $rows[0]['baseStrenght'],
-            $rows[0]['baseDexterity'],
-            $rows[0]['baseVitality'],
-            $rows[0]['baseSpecial'],
-            $rows[0]['baseInsight'], // Ho rimosso baseSpecial che avanzava rispetto ai campi della query
-            $default_stat,           // tought
-            $default_stat,           // beauty
-            $default_stat,           // cool
-            $default_stat,           // cute
-            $default_stat            // clever
+            "iiiiiiiiiiiiiiii",
+            $allenatoreId,          // 1
+            $rows[0]['id'],         // 2
+            $rows[0]['idRango'],    // 3
+            $rows[0]['baseStrenght'], // 4
+            $rows[0]['baseDexterity'], // 5
+            $rows[0]['baseVitality'], // 6
+            $rows[0]['baseSpecial'], // 7
+            $rows[0]['baseInsight'], // 8
+            $default_stat,           // 9  (tought)
+            $default_stat,           // 10 (beauty)
+            $default_stat,           // 11 (cool)
+            $default_stat,           // 12 (cute)
+            $default_stat,           // 13 (clever)
+            $default_stat,           // 14 (felicita)
+            $default_zero,           // 15 (lealta) -> Ora è una variabile!
+            $default_natura          // 16 (idNatura) -> Aggiunto perché mancava
         );
 
         // Execute the statement and check for success
@@ -184,6 +188,61 @@ class Allenatore
         } else {
 
             // return false if there was an error saving the data
+            return false;
+        }
+    }
+
+    public static function removePokemonTeam($connection, $allenatoreId, $pokemonId)
+    {
+        // Query to select all records from the company table
+        $query = "DELETE FROM pokemon_allenatori where idPokemon = $pokemonId AND idAllenatore = $allenatoreId";
+
+        // Execute the query and return an array of rows
+        $result = $connection->query($query);
+
+        return $result;
+    }
+
+
+    public static function checkPokemonGiaEsistenteTeam($connection, $allenatoreId, $pokemonId)
+    {
+        // Query to select all records from the company table
+        $query = "SELECT id FROM pokemon_allenatori where idPokemon = $pokemonId AND idAllenatore = $allenatoreId";
+
+        // Execute the query and return an array of rows
+        $result = $connection->query($query);
+
+        $result = $connection->query($query);
+        $rows = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
+            }
+            $result->free();
+        }
+
+        return $result;
+    }
+
+
+    public static function checkPokemonTeam($connection, $allenatoreId, $limite)
+    {
+        $query = "SELECT COUNT(id) AS numeroPokemon FROM pokemon_allenatori where idAllenatore = $allenatoreId";
+
+        // Execute the query and return an array of rows
+        $result = $connection->query($query);
+        $rows = [];
+        if ($result) {
+            while ($row = $result->fetch_assoc()) {
+                $rows[] = $row;
+            }
+            $result->free();
+        }
+
+
+        if ($limite > $rows[0]['numeroPokemon']) {
+            return true;
+        } else {
             return false;
         }
     }
