@@ -123,21 +123,28 @@ if ($pokemon && !empty($pokemon['tipologie'])) {
 
 $pokemonEvolution = getPokemonChainEvolution($pokemonId);
 $ranghi = getAllRanghi();
-
+echo '<pre >';
+print_r($pokemon);
+echo '</pre>';
 $arrayEvoluzioni = [];
 foreach ($pokemonEvolution as $evoluzione) {
   $datiEvoluzione = getPokemonById($evoluzione['id']);
   $data = [
-    'evoluzioneMetodoCon' => $datiEvoluzione['evoluzioneMetodoCon'] ?? '',
-    'evoluzioneTempo' => $datiEvoluzione['evoluzioneTempo'] ?? '',
-    'evoluzioneStage' => $datiEvoluzione['evoluzioneStage'] ?? '',
-    'evoluzioneMetodoDa' => $datiEvoluzione['evoluzioneMetodoDa'] ?? '',
-    'img' => pokemon_sprite_url($evoluzione['id']),
+    'evoluzioneMetodoCon' => $datiEvoluzione['evoluzioneMetodoCon'],
+    'evoluzioneTempo' => $datiEvoluzione['evoluzioneTempo'],
+    'evoluzioneStage' => $datiEvoluzione['evoluzioneStage'],
+    'evoluzioneMetodoDa' => $datiEvoluzione['evoluzioneMetodoDa'],
+    'img' => $evoluzione['id'],
     'name' => $evoluzione['name'],
     'id' => $evoluzione['id']
   ];
   array_push($arrayEvoluzioni, $data);
 }
+
+echo '<pre >';
+echo '<pre >';
+print_r($arrayEvoluzioni);
+echo '</pre>';
 
 $conoscenze = getAllConoscenze();
 $categorieConoscenze = getAllCategorieConoscenze();
@@ -379,15 +386,17 @@ $pokemon_next_id = $pokemonId < $pokemon_dex_max ? $pokemonId + 1 : null;
 // LOGICA PESO: Trasformazione ettogrammi -> chilogrammi (valore / 10)
 $pesoFormattato = '6 kg';
 if (isset($pokemon['peso'])) {
+  // Isola solo il valore numerico pulito (es. se arriva "70 kg" o solo "70")
   $pesoNumerico = floatval(preg_replace('/[^0-9.]/', '', $pokemon['peso']));
 
   if ($pesoNumerico > 0) {
-    $pesoKg = $pesoNumerico / 10;
+    $pesoKg = $pesoNumerico / 10; // Converte ettogrammi in kg
 
+    // Se dividendo otteniamo un intero (es. 70 / 10 = 7.0), rimuoviamo il decimale
     if (floor($pesoKg) == $pesoKg) {
-      $pesoFormattato = intval($pesoKg) . ' kg';
+      $pesoFormattato = intval($pesoKg) . ' kg'; // Diventa: 7 kg
     } else {
-      $pesoFormattato = $pesoKg . ' kg';
+      $pesoFormattato = $pesoKg . ' kg';         // Diventa: 0.1 kg o 6.5 kg
     }
   }
 }
@@ -1061,80 +1070,50 @@ if (isset($pokemon['peso'])) {
       font-size: 13px;
     }
 
-    /* Grafica Avanzata della Catena Evolutiva */
     .evo-chain {
       display: flex;
-      align-items: flex-start;
-      gap: 20px;
-      padding: 16px 8px;
+      align-items: center;
+      gap: 16px;
+      padding: 8px 4px;
       overflow-x: auto;
       scroll-behavior: smooth;
       -webkit-overflow-scrolling: touch;
     }
 
-    .evo-wrapper {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 12px;
-      flex: 0 0 160px;
-    }
-
     .evo-card {
-      position: relative;
       display: flex;
       flex-direction: column;
       align-items: center;
-      width: 100%;
-      padding: 32px 12px 16px;
+      flex: 0 0 130px;
+      padding: 14px 10px;
       background: #ffffff;
-      border-radius: 20px;
+      border-radius: 16px;
       border: 1px solid #e2e8f0;
       text-align: center;
       text-decoration: none;
       color: #1e293b;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+      transition: all 0.2s ease-in-out;
     }
 
     .evo-card:hover {
-      transform: translateY(-5px);
-      border-color: var(--type-accent, #3b82f6);
-      box-shadow: 0 10px 20px -5px rgba(0, 0, 0, 0.1);
+      transform: translateY(-4px);
+      border-color: #cbd5e1;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
     }
 
     .evo-card.is-current {
-      border: 2px solid var(--type-accent, #3b82f6);
+      border-color: #3b82f6;
       background: #f0f9ff;
-      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.12);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.08);
     }
 
     .evo-card img {
-      width: 80px;
-      height: 80px;
+      width: 72px;
+      height: 72px;
       object-fit: contain;
-      margin-bottom: 10px;
-      filter: drop-shadow(0 6px 8px rgba(0, 0, 0, 0.08));
-    }
-
-    .evo-stage-badge {
-      position: absolute;
-      top: 10px;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.06em;
-      text-transform: uppercase;
-      background: #f1f5f9;
-      color: #475569;
-      padding: 3px 10px;
-      border-radius: 20px;
-      border: 1px solid #e2e8f0;
-    }
-
-    .evo-card.is-current .evo-stage-badge {
-      background: var(--type-accent, #3b82f6);
-      color: #ffffff;
-      border-color: transparent;
+      margin-bottom: 8px;
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.05));
     }
 
     .evo-number {
@@ -1147,8 +1126,8 @@ if (isset($pokemon['peso'])) {
 
     .evo-name {
       display: block;
-      font-size: 14px;
-      font-weight: 800;
+      font-size: 13px;
+      font-weight: 700;
       color: #0f172a;
       text-transform: capitalize;
       white-space: nowrap;
@@ -1157,61 +1136,23 @@ if (isset($pokemon['peso'])) {
       width: 100%;
     }
 
-    .evo-current-label {
-      display: inline-block;
+    .evo-method {
+      display: block;
       margin-top: 6px;
       font-size: 10px;
-      font-weight: 700;
-      color: var(--type-accent, #3b82f6);
+      font-weight: 800;
+      color: #3b82f6;
       text-transform: uppercase;
+      letter-spacing: 0.05em;
+      min-height: 15px;
     }
 
-    /* Box Metodi di Evoluzione */
-    .evo-details-box {
-      width: 100%;
-      background: #f8fafc;
-      border: 1px solid #e2e8f0;
-      border-radius: 12px;
-      padding: 8px 10px;
-      font-size: 11px;
-      box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.02);
-    }
-
-    .evo-detail-row {
-      margin-bottom: 6px;
-      text-align: left;
-    }
-
-    .evo-detail-row:last-child {
-      margin-bottom: 0;
-    }
-
-    .evo-detail-label {
-      display: block;
-      font-weight: 700;
-      color: #64748b;
-      font-size: 9px;
-      text-transform: uppercase;
-      letter-spacing: 0.03em;
-      margin-bottom: 1px;
-    }
-
-    .evo-detail-val {
-      display: block;
-      font-weight: 600;
-      color: #334155;
-      line-height: 1.2;
-    }
-
-    /* Freccia di Connessione */
     .evo-arrow {
-      align-self: center;
-      color: #cbd5e1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      font-size: 20px;
+      color: #94a3b8;
+      font-weight: bold;
+      user-select: none;
       flex-shrink: 0;
-      margin-top: -35px;
     }
 
     @media (min-width: 1024px) {
@@ -1538,61 +1479,17 @@ if (isset($pokemon['peso'])) {
 
         <section class="panel panel-wide" id="sectionEvoluzioni">
           <div class="panel-title">
-            <h2>Catena Evolutiva</h2>
+            <h2>Evoluzioni</h2>
           </div>
           <div class="evo-chain">
-            <?php foreach ($arrayEvoluzioni as $index => $evo): ?>
-              <?php if ($index > 0): ?>
-                <span class="evo-arrow" aria-hidden="true">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                    <polyline points="12 5 19 12 12 19"></polyline>
-                  </svg>
-                </span>
-              <?php endif; ?>
-
-              <div class="evo-wrapper">
-                <a href="pokemon-dettaglio.php?id=<?= (int)$evo['id']; ?>" class="evo-card<?= $evo['id'] === $pokemonId ? ' is-current' : ''; ?>">
-                  <!-- Badge dello Stadio Evolutivo -->
-                  <?php if (!empty($evo['evoluzioneStage'])): ?>
-                    <span class="evo-stage-badge"><?= htmlspecialchars($evo['evoluzioneStage'], ENT_QUOTES, 'UTF-8'); ?></span>
-                  <?php endif; ?>
-
-                  <img src="<?= $evo['img'] ?>" alt="Artwork di <?= htmlspecialchars($evo['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy">
-                  <span class="evo-number">#<?= str_pad((string)$evo['id'], 3, '0', STR_PAD_LEFT); ?></span>
-                  <span class="evo-name"><?= htmlspecialchars($evo['name'], ENT_QUOTES, 'UTF-8'); ?></span>
-
-                  <?php if ($evo['id'] === $pokemonId): ?>
-                    <span class="evo-current-label">Identità Attuale</span>
-                  <?php endif; ?>
-                </a>
-
-                <!-- Box Dettagli Metodo Evolutivo (mostrato solo se ci sono dati utili) -->
-                <?php if (!empty($evo['evoluzioneMetodoDa']) || !empty($evo['evoluzioneMetodoCon']) || !empty($evo['evoluzioneTempo'])): ?>
-                  <div class="evo-details-box">
-                    <?php if (!empty($evo['evoluzioneMetodoDa'])): ?>
-                      <div class="evo-detail-row">
-                        <span class="evo-detail-label">Si evolve da</span>
-                        <span class="evo-detail-val"><?= htmlspecialchars($evo['evoluzioneMetodoDa'], ENT_QUOTES, 'UTF-8'); ?></span>
-                      </div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($evo['evoluzioneMetodoCon'])): ?>
-                      <div class="evo-detail-row">
-                        <span class="evo-detail-label">Si evolve con</span>
-                        <span class="evo-detail-val"><?= htmlspecialchars($evo['evoluzioneMetodoCon'], ENT_QUOTES, 'UTF-8'); ?></span>
-                      </div>
-                    <?php endif; ?>
-
-                    <?php if (!empty($evo['evoluzioneTempo'])): ?>
-                      <div class="evo-detail-row">
-                        <span class="evo-detail-label">Tempo richiesto</span>
-                        <span class="evo-detail-val"><?= htmlspecialchars($evo['evoluzioneTempo'], ENT_QUOTES, 'UTF-8'); ?></span>
-                      </div>
-                    <?php endif; ?>
-                  </div>
-                <?php endif; ?>
-              </div>
+            <?php foreach ($pokemonEvolution as $index => $evo): ?>
+              <?php if ($index > 0): ?><span class="evo-arrow" aria-hidden="true">→</span><?php endif; ?>
+              <a href="pokemon-dettaglio.php?id=<?= (int)$evo['id']; ?>" class="evo-card<?= $evo['id'] === $pokemonId ? ' is-current' : ''; ?>">
+                <img src="<?= $evo['img'] ?>" alt="Artwork di <?= htmlspecialchars($evo['name'], ENT_QUOTES, 'UTF-8'); ?>" loading="lazy">
+                <span class="evo-number">#<?= str_pad((string)$evo['id'], 3, '0', STR_PAD_LEFT); ?></span>
+                <span class="evo-name"><?= htmlspecialchars($evo['name'], ENT_QUOTES, 'UTF-8'); ?></span>
+                <span class="evo-method"><?= ($evo['id'] == $pokemonId) ? 'In scheda' : ''; ?></span>
+              </a>
             <?php endforeach; ?>
           </div>
         </section>

@@ -115,7 +115,7 @@ class Pokemon
 
     public static function getPokemonTypesById($connection, $id)
     {
-        $sql = "SELECT pokemon_tipologie.* FROM pokemon_tipologie_pivot INNER JOIN pokemon_tipologie ON pokemon_tipologie_pivot.idTipologiaPokemon = pokemon_tipologie.id WHERE pokemon_tipologie_pivot.idPokemon = ? ";
+        $sql = "SELECT pokemon_tipologie.* FROM pokemon_tipologie_pivot INNER JOIN pokemon_tipologie ON pokemon_tipologie_pivot.idTipologiaPokemon = pokemon_tipologie.id WHERE pokemon_tipologie_pivot.idPokemon = ? ORDER BY pokemon_tipologie_pivot.ordine ASC";
 
         if ($statement = $connection->prepare($sql)) {
             $statement->bind_param('i', $id);
@@ -180,5 +180,31 @@ class Pokemon
         }
 
         return null;
+    }
+
+    public static function getDebolezzeByTipologiaId($connection, $idTipologia)
+    {
+        $sql = "SELECT pokemon_tipologie.*, debolezze_stati.statoDebolezza 
+            FROM debolezze_stati 
+            INNER JOIN debolezze_tipologie ON debolezze_tipologie.idDebolezzaStati = debolezze_stati.id 
+            INNER JOIN pokemon_tipologie ON pokemon_tipologie.id = debolezze_tipologie.idPokemonTipologia 
+            WHERE debolezze_stati.idPokemonTipologia = ?";
+
+        if ($statement = $connection->prepare($sql)) {
+            $statement->bind_param('i', $idTipologia); // 'i' perché l'ID è un intero
+            $statement->execute();
+            $result = $statement->get_result();
+
+            $rows = [];
+            if ($result) {
+                while ($row = $result->fetch_assoc()) {
+                    $rows[] = $row;
+                }
+            }
+            $statement->close();
+            return $rows;
+        }
+
+        return [];
     }
 }

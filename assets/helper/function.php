@@ -148,7 +148,8 @@ function getPokemonDetailFromPokeAPI($nameOrId)
     }
 
     $ch = curl_init();
-    curl_setopt($ch, CURLOPT_URL, "https://pokeapi.co/api/v2/pokemon/{$idOrName}");
+    // Corretto l'URL che usava le graffe in modo errato nella stringa double-quote se non concatenato bene, o semplicemente ripulito
+    curl_setopt($ch, CURLOPT_URL, "https://pokeapi.co/api/v2/pokemon/" . $idOrName);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     $response = curl_exec($ch);
     curl_close($ch);
@@ -160,16 +161,12 @@ function getPokemonDetailFromPokeAPI($nameOrId)
 
     return [
         'id' => $decoded['id'],
-
         'name' => $decoded['name'],
         'img' => $decoded['sprites']['front_default'] ?? null,
         'peso' => $decoded['weight'] ?? null,
         'altezza' => $decoded['height'] ?? null,
-
     ];
 }
-
-
 
 function getPokemonChainEvolution($id)
 {
@@ -180,8 +177,9 @@ function getPokemonChainEvolution($id)
     curl_close($ch);
 
     $pokemonData = json_decode($response, true);
-
-
+    if (!$pokemonData) {
+        return [];
+    }
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $pokemonData['species']['url']);
@@ -190,8 +188,9 @@ function getPokemonChainEvolution($id)
     curl_close($ch);
 
     $species = json_decode($response, true);
-
-
+    if (!$species) {
+        return [];
+    }
 
     $ch = curl_init();
     curl_setopt($ch, CURLOPT_URL, $species['evolution_chain']['url']);
@@ -200,26 +199,35 @@ function getPokemonChainEvolution($id)
     curl_close($ch);
 
     $evolutionChain = json_decode($response, true);
-
-
-    $nomePokemon = $evolutionChain['chain']['species']['name'];
-
-    $arrayEvolution[] = getPokemonDetailFromPokeAPI($nomePokemon);
-
-    if (isset($evolutionChain['chain']['evolves_to'][0]['species']['name'])) {
-        $nomePokemon = $evolutionChain['chain']['evolves_to'][0]['species']['name'];
-        $arrayEvolution[] = getPokemonDetailFromPokeAPI($nomePokemon);
+    if (!$evolutionChain) {
+        return [];
     }
 
-    if (isset($evolutionChain['chain']['evolves_to'][0]['evolves_to'][0]['species']['name'])) {
-        $nomePokemon = $evolutionChain['chain']['evolves_to'][0]['evolves_to'][0]['species']['name'];
-        $arrayEvolution[] = getPokemonDetailFromPokeAPI($nomePokemon);
-    }
+    $arrayEvolution = [];
 
-    if (isset($evolutionChain['chain']['evolves_to'][0]['evolves_to'][0]['evolves_to'][0]['species']['name'])) {
-        $nomePokemon = $evolutionChain['chain']['evolves_to'][0]['evolves_to'][0]['evolves_to'][0]['species']['name'];
-        $arrayEvolution[] = getPokemonDetailFromPokeAPI($nomePokemon);
-    }
+    /**
+     * Funzione di supporto interna per esplorare l'albero delle evoluzioni.
+     * Usa la tua funzione getPokemonDetailFromPokeAPI per ogni Pokémon trovato.
+     */
+    $esploraCatena = function ($nodo) use (&$arrayEvolution, &$esploraCatena) {
+        if (isset($nodo['species']['name'])) {
+            // Recupera i dettagli usando la tua funzione originale
+            $dettagli = getPokemonDetailFromPokeAPI($nodo['species']['name']);
+            if ($dettagli) {
+                $arrayEvolution[] = $dettagli;
+            }
+        }
+
+        // Se ci sono evoluzioni successive, cicla su OGNUNA di esse (risolve il problema dell'indice [0])
+        if (!empty($nodo['evolves_to'])) {
+            foreach ($nodo['evolves_to'] as $prossimoNodo) {
+                $esploraCatena($prossimoNodo);
+            }
+        }
+    };
+
+    // Avvia l'esplorazione partendo dalla base della catena
+    $esploraCatena($evolutionChain['chain']);
 
     return $arrayEvolution;
 }

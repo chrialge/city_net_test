@@ -68,6 +68,7 @@ if (isset($_SESSION['allenatoreId'])) {
   } else {
     echo 3;
 
+
     unset($_SESSION['pokemonId']);
   }
 }
